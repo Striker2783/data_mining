@@ -5,7 +5,7 @@ pub struct AprioriHashTree<'a, const N: usize> {
 }
 
 impl<'a, const N: usize> AprioriHashTree<'a, N> {
-    pub fn contains(&self, v: &[usize]) -> bool {
+    fn get_leaf(&self, v: &[usize]) -> Option<&Box<HashTreeLeafNode<'a>>> {
         assert!(!v.is_empty());
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
@@ -18,19 +18,28 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
                         v[i].hash(&mut hasher);
                         curr = &hash_tree_internal_node.map[(hasher.finish() as usize) % N];
                     }
-                    Node::Leaf(_) => return false,
+                    Node::Leaf(_) => return None,
                 }
             } else {
-                return false;
+                return None;
             }
         }
         if let Some(n) = curr {
             match n {
-                Node::Internal(_) => return true,
-                Node::Leaf(hash_tree_leaf_node) => return hash_tree_leaf_node.contains(v),
+                Node::Internal(_) => return None,
+                Node::Leaf(hash_tree_leaf_node) => return Some(hash_tree_leaf_node),
             }
         }
-        false
+        None
+    }
+    pub fn contains(&self, v: &[usize]) -> bool {
+        assert!(!v.is_empty());
+        let leaf = self.get_leaf(v);
+        if let Some(l) = leaf {
+            l.contains(v)
+        } else {
+            false
+        }
     }
     pub fn add(&mut self, v: &'a [usize]) {
         assert!(!v.is_empty());
@@ -89,6 +98,14 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             }
         }
     }
+    fn get_count(&self, v: &[usize]) -> Option<u64> {
+        let leaf = self.get_leaf(v);
+        if let Some(l) = leaf {
+            l.get_count(v)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -126,6 +143,10 @@ impl<'a> HashTreeLeafNode<'a> {
     fn add(&mut self, v: &'a [usize]) {
         self.0.push((v, 0));
     }
+    fn get_count(&self, v: &[usize]) -> Option<u64> {
+        let f = self.0.iter().find(|v2| v2.0.eq(v));
+        f.map(|f| f.1)
+    }
 }
 
 #[cfg(test)]
@@ -138,5 +159,8 @@ mod tests {
         tree.add(&[1, 2]);
         assert!(tree.contains(&[1, 2]));
         tree.increment(&[1, 2]);
+        assert_eq!(tree.get_count(&[1, 2]), Some(1));
+        assert!(!tree.contains(&[1, 3]));
+        assert_eq!(tree.get_count(&[1, 3]), None);
     }
 }
