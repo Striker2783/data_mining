@@ -12,3 +12,7 @@ version = "0.1.0"
 dependencies = [
  "apriori",
 ]
+
+[[package]]
+name = "datasets"
+version = "0.1.0"

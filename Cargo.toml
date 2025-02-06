@@ -7,4 +7,4 @@ edition = "2024"
 apriori ={ path = "./crates/apriori/" }
 
 [workspace]
-members = ["./crates/apriori/"]
+members = ["./crates/apriori/", "crates/datasets"]
