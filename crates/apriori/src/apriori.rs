@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use datasets::transaction_set::TransactionSet;
 
 use crate::hash_tree::AprioriHashTree;
@@ -26,9 +28,7 @@ impl<'a> Apriori<'a> {
 
 #[derive(Debug, Default)]
 struct Candidates {
-    first: Vec<usize>,
-    second: Array2D<bool>,
-    trees: Vec<AprioriHashTree<50>>,
+    candidates: Vec<HashSet<Vec<usize>>>,
 }
 
 impl Candidates {
@@ -46,11 +46,13 @@ impl Candidates {
                 first[item] += 1;
             }
         }
+        let mut v = HashSet::new();
         for (i, n) in first.into_iter().enumerate() {
             if n >= data.min_support {
-                self.first.push(i);
+                v.insert(vec![i]);
             }
         }
+        self.candidates.push(v);
     }
     fn run_two(&mut self, data: &Apriori) {
         let mut second = Array2D::new(data.data.num_items);
@@ -61,12 +63,13 @@ impl Candidates {
                 }
             }
         }
-        self.second = Array2D::new(data.data.num_items);
+        let mut v = HashSet::new();
         for (r, c, count) in second.iter() {
             if count >= data.min_support {
-                self.second.set(r, c, true);
+                v.insert(vec![r,c]);
             }
         }
+        self.candidates.push(v);
     }
 }
 
@@ -189,19 +192,11 @@ mod tests {
         );
         let apriori = Apriori::new(&example, 2, 1);
         let candidates = apriori.get_candidates();
-        let mut expected = HashSet::new();
-        expected.insert((1, 0));
-        expected.insert((2, 0));
-        expected.insert((4, 0));
-        expected.insert((2, 1));
-        expected.insert((3, 1));
-        expected.insert((4, 1));
-        for (r, c, b) in candidates.second.iter() {
-            if expected.contains(&(r, c)) {
-                assert!(b)
-            } else {
-                assert!(!b);
-            }
-        }
+        assert!(candidates.candidates[1].contains(&vec![1, 0]));
+        assert!(candidates.candidates[1].contains(&vec![2, 0]));
+        assert!(candidates.candidates[1].contains(&vec![4, 0]));
+        assert!(candidates.candidates[1].contains(&vec![2, 1]));
+        assert!(candidates.candidates[1].contains(&vec![3, 1]));
+        assert!(candidates.candidates[1].contains(&vec![4, 1]));
     }
 }
