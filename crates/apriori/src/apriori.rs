@@ -25,7 +25,7 @@ impl<'a> Apriori<'a> {
 #[derive(Debug, Default)]
 struct Candidates {
     first: Vec<usize>,
-    second: Vec<(usize, usize)>,
+    second: Array2D<bool>,
     trees: Vec<AprioriHashTree<50>>,
 }
 
@@ -58,37 +58,25 @@ impl Candidates {
                 }
             }
         }
-        for (r,c,count) in second.iter() {
+        self.second = Array2D::new(data.data.num_items);
+        for (r, c, count) in second.iter() {
             if count >= data.min_support {
-                self.second.push((r,c));
+                self.second.set(r, c, true);
             }
         }
     }
 }
 
-fn sqrt(n: usize) -> usize {
-    let mut left = 0;
-    let mut right = n;
-    while left < right {
-        let mid = (left + right) / 2;
-        if mid * mid <= n {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
-    }
-    left - 1
-}
 #[derive(Debug)]
-struct Array2DIterator<'a> {
-    data: &'a Array2D,
+struct Array2DIterator<'a, T> {
+    data: &'a Array2D<T>,
     row: usize,
     col: usize,
     idx: usize,
 }
 
-impl<'a> Array2DIterator<'a> {
-    fn new(data: &'a Array2D) -> Self {
+impl<'a, T> Array2DIterator<'a, T> {
+    fn new(data: &'a Array2D<T>) -> Self {
         Self {
             data,
             row: 1,
@@ -97,8 +85,8 @@ impl<'a> Array2DIterator<'a> {
         }
     }
 }
-impl<'a> Iterator for Array2DIterator<'a> {
-    type Item = (usize, usize, u64);
+impl<'a, T: Copy> Iterator for Array2DIterator<'a, T> {
+    type Item = (usize, usize, T);
     fn next(&mut self) -> Option<Self::Item> {
         if self.idx >= self.data.0.len() {
             return None;
@@ -115,30 +103,36 @@ impl<'a> Iterator for Array2DIterator<'a> {
 }
 
 #[derive(Debug, Default)]
-struct Array2D(Vec<u64>);
-impl Array2D {
-    fn new(rows: usize) -> Self {
-        Array2D(vec![0; (rows * (rows - 1)) / 2])
+struct Array2D<T>(Vec<T>);
+impl<T: Copy> Array2D<T> {
+    fn get(&self, row: usize, col: usize) -> T {
+        self.0[self.get_index(row, col)]
     }
+}
+impl<T: Copy + Default> Array2D<T> {
+    fn new(rows: usize) -> Self {
+        Array2D(vec![T::default(); (rows * (rows - 1)) / 2])
+    }
+}
+impl<T> Array2D<T> {
     fn get_index(&self, row: usize, col: usize) -> usize {
         assert!(row != col);
         let (row, col) = if row > col { (row, col) } else { (col, row) };
         let index = (row * (row - 1)) / 2 + col;
         index
     }
-    fn get(&self, row: usize, col: usize) -> u64 {
-        self.0[self.get_index(row, col)]
-    }
-    fn increment(&mut self, row: usize, col: usize) {
-        let index = self.get_index(row, col);
-        self.0[index] += 1;
-    }
-    fn set(&mut self, row: usize, col: usize, value: u64) {
+    fn set(&mut self, row: usize, col: usize, value: T) {
         let index = self.get_index(row, col);
         self.0[index] = value;
     }
-    fn iter(&self) -> Array2DIterator {
+    fn iter(&self) -> Array2DIterator<T> {
         Array2DIterator::new(self)
+    }
+}
+impl Array2D<u64> {
+    fn increment(&mut self, row: usize, col: usize) {
+        let index = self.get_index(row, col);
+        self.0[index] += 1;
     }
 }
 
