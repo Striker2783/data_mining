@@ -35,6 +35,33 @@ impl<const N: usize> AprioriHashTree<N> {
         }
         None
     }
+    fn get_leaf_mut(&mut self, v: &[usize]) -> Option<&mut HashTreeLeafNode> {
+        assert!(!v.is_empty());
+        let mut hasher = DefaultHasher::new();
+        v[0].hash(&mut hasher);
+        let mut curr = &mut self.root.map[(hasher.finish() as usize) % N];
+        for i in 1..v.len() {
+            if let Some(n) = curr {
+                match n.as_mut() {
+                    Node::Internal(hash_tree_internal_node) => {
+                        let mut hasher = DefaultHasher::new();
+                        v[i].hash(&mut hasher);
+                        curr = &mut hash_tree_internal_node.map[(hasher.finish() as usize) % N];
+                    }
+                    Node::Leaf(_) => return None,
+                }
+            } else {
+                return None;
+            }
+        }
+        if let Some(n) = curr {
+            match n.as_mut() {
+                Node::Internal(_) => return None,
+                Node::Leaf(hash_tree_leaf_node) => return Some(hash_tree_leaf_node),
+            }
+        }
+        None
+    }
     pub fn contains(&self, v: &[usize]) -> bool {
         assert!(!v.is_empty());
         let leaf = self.get_leaf(v);
@@ -110,6 +137,14 @@ impl<const N: usize> AprioriHashTree<N> {
             None
         }
     }
+    pub fn remove(&mut self, v: &[usize]) -> Option<(Vec<usize>, u64)> {
+        let leaf = self.get_leaf_mut(v);
+        if let Some(l) = leaf {
+            return l.remove(v);
+        } else {
+            return None;
+        }
+    }
     pub fn iter(&self) -> HashTreeIterator<N> {
         HashTreeIterator::new(self)
     }
@@ -146,16 +181,28 @@ impl HashTreeLeafNode {
             v.1 += 1;
         }
     }
+    fn find(&self, v: &[usize]) -> Option<&(Vec<usize>, u64)> {
+        self.0.iter().find(|v2| v2.0.eq(v))
+    }
+    fn find_mut(&mut self, v: &[usize]) -> Option<&mut (Vec<usize>, u64)> {
+        self.0.iter_mut().find(|v2| v2.0.eq(v))
+    }
     fn contains(&self, v: &[usize]) -> bool {
-        let f = self.0.iter().find(|v2| v2.0.eq(v));
-        f.is_some()
+        self.find(v).is_some()
     }
     fn add(&mut self, v: &[usize]) {
         self.0.push((v.to_vec(), 0));
     }
     fn get_count(&self, v: &[usize]) -> Option<u64> {
-        let f = self.0.iter().find(|v2| v2.0.eq(v));
-        f.map(|f| f.1)
+        self.find(v).map(|f| f.1)
+    }
+    fn remove(&mut self, v: &[usize]) -> Option<(Vec<usize>, u64)> {
+        for i in 0..self.0.len() {
+            if v.eq(self.0[i].0.as_slice()) {
+                return Some(self.0.remove(i));
+            }
+        }
+        return None;
     }
 }
 pub struct HashTreeIterator<'a, const N: usize> {
@@ -238,6 +285,8 @@ mod tests {
         assert_eq!(tree.get_count(&[1, 2]), Some(1));
         assert!(!tree.contains(&[1, 3]));
         assert_eq!(tree.get_count(&[1, 3]), None);
+        assert_eq!(tree.remove(&[1, 2]), Some((vec![1, 2], 1)));
+        assert!(!tree.contains(&[1, 2]));
     }
     #[test]
     fn test_hash_tree_iterator() {
