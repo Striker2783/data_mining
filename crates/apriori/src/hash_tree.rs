@@ -1,7 +1,10 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
+/// A Hash Tree for the Apriori Algorithm
+/// Does not care about duplicates.
 #[derive(Debug, Default)]
 pub struct AprioriHashTree<const N: usize> {
     root: HashTreeInternalNode<N>,
+    length: usize,
 }
 
 impl<const N: usize> AprioriHashTree<N> {
@@ -71,6 +74,7 @@ impl<const N: usize> AprioriHashTree<N> {
                 Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.add(v),
             }
         }
+        self.length += 1;
     }
     pub fn increment(&mut self, v: &[usize]) {
         assert!(!v.is_empty());
@@ -108,6 +112,9 @@ impl<const N: usize> AprioriHashTree<N> {
     }
     pub fn iter(&self) -> HashTreeIterator<N> {
         HashTreeIterator::new(self)
+    }
+    pub fn len(&self) -> usize {
+        self.length
     }
 }
 

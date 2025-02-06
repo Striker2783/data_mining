@@ -5,13 +5,13 @@ version = 4
 [[package]]
 name = "apriori"
 version = "0.1.0"
+dependencies = [
+ "datasets",
+]
 
 [[package]]
 name = "data_mining"
 version = "0.1.0"
-dependencies = [
- "apriori",
-]
 
 [[package]]
 name = "datasets"
