@@ -17,8 +17,10 @@ impl<'a> Apriori<'a> {
         }
     }
     pub fn run(self) {}
-    fn get_candidates(data: &TransactionSet) -> Candidates {
-        todo!()
+    fn get_candidates(&self) -> Candidates {
+        let mut candidates = Candidates::new();
+        candidates.run(&self);
+        candidates
     }
 }
 
@@ -35,6 +37,7 @@ impl Candidates {
     }
     fn run(&mut self, data: &Apriori) {
         self.run_one(data);
+        self.run_two(data);
     }
     fn run_one(&mut self, data: &Apriori) {
         let mut first = vec![0u64; data.data.num_items];
@@ -54,7 +57,7 @@ impl Candidates {
         for d in data.data.iter() {
             for i in 0..d.len() {
                 for j in 0..i {
-                    second.increment(i, j);
+                    second.increment(d[i], d[j]);
                 }
             }
         }
@@ -138,6 +141,8 @@ impl Array2D<u64> {
 
 #[cfg(test)]
 mod tests {
+    use std::{collections::HashSet, vec};
+
     use super::*;
     #[test]
     fn test_array2d() {
@@ -164,6 +169,39 @@ mod tests {
         for (i, e) in array2d.iter().enumerate() {
             assert_eq!(e.2, i as u64);
             assert_eq!(array2d.get(e.0, e.1), e.2);
+        }
+    }
+    #[test]
+    fn test_get_candidates() {
+        let example = TransactionSet::new(
+            vec![
+                vec![0, 1, 4],
+                vec![1, 3],
+                vec![1, 2],
+                vec![0, 1, 3],
+                vec![0, 2],
+                vec![1, 2],
+                vec![0, 2],
+                vec![0, 1, 2, 4],
+                vec![0, 1, 2],
+            ],
+            5,
+        );
+        let apriori = Apriori::new(&example, 2, 1);
+        let candidates = apriori.get_candidates();
+        let mut expected = HashSet::new();
+        expected.insert((1, 0));
+        expected.insert((2, 0));
+        expected.insert((4, 0));
+        expected.insert((2, 1));
+        expected.insert((3, 1));
+        expected.insert((4, 1));
+        for (r, c, b) in candidates.second.iter() {
+            if expected.contains(&(r, c)) {
+                assert!(b)
+            } else {
+                assert!(!b);
+            }
         }
     }
 }
