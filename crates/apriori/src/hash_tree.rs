@@ -106,6 +106,9 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             None
         }
     }
+    pub fn iter(&'a self) -> HashTreeIterator<'a, N> {
+        HashTreeIterator::new(self)
+    }
 }
 
 #[derive(Debug)]
@@ -148,9 +151,75 @@ impl<'a> HashTreeLeafNode<'a> {
         f.map(|f| f.1)
     }
 }
+pub struct HashTreeIterator<'a, const N: usize> {
+    tree: &'a AprioriHashTree<'a, N>,
+    outer: usize,
+    stack: Vec<(&'a Node<'a, N>, usize)>,
+}
+
+impl<'a, const N: usize> Iterator for HashTreeIterator<'a, N> {
+    type Item = (&'a [usize], u64);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.stack.is_empty() {
+            let mut i = self.outer;
+            while i < N && self.tree.root.map[i].is_none() {
+                i += 1;
+            }
+            if i >= N {
+                return None;
+            }
+            self.outer = i + 1;
+            match &self.tree.root.map[i] {
+                Some(a) => self.stack.push((a.as_ref(), 0)),
+                None => unreachable!(),
+            }
+        }
+        while !self.stack.is_empty() {
+            let mut i = self.stack.last().unwrap().1;
+            match self.stack.last().unwrap().0 {
+                Node::Internal(hash_tree_internal_node) => {
+                    while i < N && hash_tree_internal_node.map[i].is_none() {
+                        i += 1;
+                    }
+                    if i >= N {
+                        self.stack.pop();
+                        continue;
+                    }
+                    self.stack.last_mut().unwrap().1 = i + 1;
+                    match &hash_tree_internal_node.map[i] {
+                        Some(a) => self.stack.push((a, 0)),
+                        None => unreachable!(),
+                    }
+                }
+                Node::Leaf(hash_tree_leaf_node) => {
+                    if i >= hash_tree_leaf_node.0.len() {
+                        self.stack.pop();
+                        continue;
+                    }
+                    self.stack.last_mut().unwrap().1 += 1;
+                    return Some(hash_tree_leaf_node.0[i]);
+                }
+            }
+        }
+        self.next()
+    }
+}
+
+impl<'a, const N: usize> HashTreeIterator<'a, N> {
+    fn new(tree: &'a AprioriHashTree<'a, N>) -> Self {
+        Self {
+            tree,
+            stack: Vec::new(),
+            outer: 0,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::AprioriHashTree;
 
     #[test]
@@ -162,5 +231,19 @@ mod tests {
         assert_eq!(tree.get_count(&[1, 2]), Some(1));
         assert!(!tree.contains(&[1, 3]));
         assert_eq!(tree.get_count(&[1, 3]), None);
+    }
+    #[test]
+    fn test_hash_tree_iterator() {
+        let mut tree = AprioriHashTree::<2>::default();
+        tree.add(&[1, 2]);
+        tree.increment(&[1, 2]);
+        tree.add(&[1, 3]);
+        let mut set = HashSet::new();
+        set.insert([1,2]);
+        set.insert([1,3]);
+        for item in tree.iter() {
+            assert!(set.remove(item.0));
+        }
+        assert!(set.is_empty());
     }
 }
