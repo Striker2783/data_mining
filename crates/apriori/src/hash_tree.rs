@@ -1,11 +1,11 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 #[derive(Debug, Default)]
-pub struct AprioriHashTree<'a, const N: usize> {
-    root: HashTreeInternalNode<'a, N>,
+pub struct AprioriHashTree<const N: usize> {
+    root: HashTreeInternalNode<N>,
 }
 
-impl<'a, const N: usize> AprioriHashTree<'a, N> {
-    fn get_leaf(&self, v: &[usize]) -> Option<&HashTreeLeafNode<'a>> {
+impl<const N: usize> AprioriHashTree<N> {
+    fn get_leaf(&self, v: &[usize]) -> Option<&HashTreeLeafNode> {
         assert!(!v.is_empty());
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
@@ -27,7 +27,7 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
         if let Some(n) = curr {
             match n.as_ref() {
                 Node::Internal(_) => return None,
-                Node::Leaf(hash_tree_leaf_node) => return Some(hash_tree_leaf_node),
+                Node::Leaf(hash_tree_leaf_node) => return Some(&hash_tree_leaf_node),
             }
         }
         None
@@ -41,7 +41,7 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             false
         }
     }
-    pub fn add(&mut self, v: &'a [usize]) {
+    pub fn add(&mut self, v: &[usize]) {
         assert!(!v.is_empty());
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
@@ -106,22 +106,22 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             None
         }
     }
-    pub fn iter(&'a self) -> HashTreeIterator<'a, N> {
+    pub fn iter(&self) -> HashTreeIterator<N> {
         HashTreeIterator::new(self)
     }
 }
 
 #[derive(Debug)]
-enum Node<'a, const N: usize> {
-    Internal(HashTreeInternalNode<'a, N>),
-    Leaf(HashTreeLeafNode<'a>),
+enum Node<const N: usize> {
+    Internal(HashTreeInternalNode<N>),
+    Leaf(HashTreeLeafNode),
 }
 #[derive(Debug)]
-struct HashTreeInternalNode<'a, const N: usize> {
-    map: [Option<Box<Node<'a, N>>>; N],
+struct HashTreeInternalNode<const N: usize> {
+    map: [Option<Box<Node<N>>>; N],
 }
 
-impl<const N: usize> Default for HashTreeInternalNode<'_, N> {
+impl<const N: usize> Default for HashTreeInternalNode<N> {
     fn default() -> Self {
         Self {
             map: [const { None }; N],
@@ -130,9 +130,9 @@ impl<const N: usize> Default for HashTreeInternalNode<'_, N> {
 }
 
 #[derive(Debug, Default)]
-struct HashTreeLeafNode<'a>(Vec<(&'a [usize], u64)>);
+struct HashTreeLeafNode(Vec<(Vec<usize>, u64)>);
 
-impl<'a> HashTreeLeafNode<'a> {
+impl HashTreeLeafNode {
     fn increment(&mut self, v: &[usize]) {
         let f = self.0.iter_mut().find(|v2| v2.0.eq(v));
         if let Some(v) = f {
@@ -143,8 +143,8 @@ impl<'a> HashTreeLeafNode<'a> {
         let f = self.0.iter().find(|v2| v2.0.eq(v));
         f.is_some()
     }
-    fn add(&mut self, v: &'a [usize]) {
-        self.0.push((v, 0));
+    fn add(&mut self, v: &[usize]) {
+        self.0.push((v.to_vec(), 0));
     }
     fn get_count(&self, v: &[usize]) -> Option<u64> {
         let f = self.0.iter().find(|v2| v2.0.eq(v));
@@ -152,9 +152,9 @@ impl<'a> HashTreeLeafNode<'a> {
     }
 }
 pub struct HashTreeIterator<'a, const N: usize> {
-    tree: &'a AprioriHashTree<'a, N>,
+    tree: &'a AprioriHashTree<N>,
     outer: usize,
-    stack: Vec<(&'a Node<'a, N>, usize)>,
+    stack: Vec<(&'a Node<N>, usize)>,
 }
 
 impl<'a, const N: usize> Iterator for HashTreeIterator<'a, N> {
@@ -198,7 +198,7 @@ impl<'a, const N: usize> Iterator for HashTreeIterator<'a, N> {
                         continue;
                     }
                     self.stack.last_mut().unwrap().1 += 1;
-                    return Some(hash_tree_leaf_node.0[i]);
+                    return Some((&hash_tree_leaf_node.0[i].0, hash_tree_leaf_node.0[i].1));
                 }
             }
         }
@@ -207,7 +207,7 @@ impl<'a, const N: usize> Iterator for HashTreeIterator<'a, N> {
 }
 
 impl<'a, const N: usize> HashTreeIterator<'a, N> {
-    fn new(tree: &'a AprioriHashTree<'a, N>) -> Self {
+    fn new(tree: &'a AprioriHashTree<N>) -> Self {
         Self {
             tree,
             stack: Vec::new(),
@@ -239,8 +239,8 @@ mod tests {
         tree.increment(&[1, 2]);
         tree.add(&[1, 3]);
         let mut set = HashSet::new();
-        set.insert([1,2]);
-        set.insert([1,3]);
+        set.insert([1, 2]);
+        set.insert([1, 3]);
         for item in tree.iter() {
             assert!(set.remove(item.0));
         }
