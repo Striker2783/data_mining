@@ -5,14 +5,14 @@ pub struct AprioriHashTree<'a, const N: usize> {
 }
 
 impl<'a, const N: usize> AprioriHashTree<'a, N> {
-    fn get_leaf(&self, v: &[usize]) -> Option<&Box<HashTreeLeafNode<'a>>> {
+    fn get_leaf(&self, v: &[usize]) -> Option<&HashTreeLeafNode<'a>> {
         assert!(!v.is_empty());
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
         let mut curr = &self.root.map[(hasher.finish() as usize) % N];
         for i in 1..v.len() {
             if let Some(n) = curr {
-                match n {
+                match n.as_ref() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
                         v[i].hash(&mut hasher);
@@ -25,7 +25,7 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             }
         }
         if let Some(n) = curr {
-            match n {
+            match n.as_ref() {
                 Node::Internal(_) => return None,
                 Node::Leaf(hash_tree_leaf_node) => return Some(hash_tree_leaf_node),
             }
@@ -49,10 +49,10 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
         let mut curr = &mut self.root.map[hash % N];
         for i in 1..v.len() {
             if curr.is_none() {
-                *curr = Some(Node::Internal(Box::new(HashTreeInternalNode::default())))
+                *curr = Some(Box::new(Node::Internal(HashTreeInternalNode::default())));
             }
             if let Some(n) = curr {
-                match n {
+                match n.as_mut() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
                         v[i].hash(&mut hasher);
@@ -63,10 +63,10 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             }
         }
         if curr.is_none() {
-            *curr = Some(Node::Leaf(Box::new(HashTreeLeafNode::default())));
+            *curr = Some(Box::new(Node::Leaf(HashTreeLeafNode::default())));
         }
         if let Some(n) = curr {
-            match n {
+            match n.as_mut() {
                 Node::Internal(_) => (),
                 Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.add(v),
             }
@@ -79,7 +79,7 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
         let mut curr = &mut self.root.map[(hasher.finish() as usize) % N];
         for i in 1..v.len() {
             if let Some(n) = curr {
-                match n {
+                match n.as_mut() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
                         v[i].hash(&mut hasher);
@@ -92,13 +92,13 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
             }
         }
         if let Some(n) = curr {
-            match n {
+            match n.as_mut() {
                 Node::Internal(_) => (),
                 Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.increment(v),
             }
         }
     }
-    fn get_count(&self, v: &[usize]) -> Option<u64> {
+    pub fn get_count(&self, v: &[usize]) -> Option<u64> {
         let leaf = self.get_leaf(v);
         if let Some(l) = leaf {
             l.get_count(v)
@@ -110,12 +110,12 @@ impl<'a, const N: usize> AprioriHashTree<'a, N> {
 
 #[derive(Debug)]
 enum Node<'a, const N: usize> {
-    Internal(Box<HashTreeInternalNode<'a, N>>),
-    Leaf(Box<HashTreeLeafNode<'a>>),
+    Internal(HashTreeInternalNode<'a, N>),
+    Leaf(HashTreeLeafNode<'a>),
 }
 #[derive(Debug)]
 struct HashTreeInternalNode<'a, const N: usize> {
-    map: [Option<Node<'a, N>>; N],
+    map: [Option<Box<Node<'a, N>>>; N],
 }
 
 impl<const N: usize> Default for HashTreeInternalNode<'_, N> {
