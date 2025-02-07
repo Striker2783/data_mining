@@ -48,7 +48,6 @@ impl Candidates {
             for i in stack {
                 v.push(data[*i]);
             }
-            println!("{v:?}");
             tree.increment(&v);
             return;
         }
