@@ -8,6 +8,9 @@ pub struct AprioriHashTree<const N: usize> {
 }
 
 impl<const N: usize> AprioriHashTree<N> {
+    pub fn new() -> Self {
+        Self::default()
+    }
     fn get_leaf(&self, v: &[usize]) -> Option<&HashTreeLeafNode> {
         assert!(!v.is_empty());
         let mut hasher = DefaultHasher::new();
