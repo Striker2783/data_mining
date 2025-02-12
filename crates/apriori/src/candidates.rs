@@ -1,27 +1,27 @@
 use std::{collections::HashSet, hash::RandomState};
 
-use datasets::{transaction_set::TransactionSet, utils::nested_loops};
+use datasets::utils::nested_loops;
 
 use crate::{array2d::Array2D, candidates_func::join_tree};
 
 #[derive(Debug)]
 pub struct Candidates<'a> {
     candidates: Vec<HashSet<Vec<usize>>>,
-    data: &'a TransactionSet,
+    data: &'a Vec<Vec<usize>>,
     min_sup: u64,
 }
 
 impl<'a> Candidates<'a> {
-    pub fn new(data: &'a TransactionSet, min_sup: u64) -> Self {
+    pub fn new(data: &'a Vec<Vec<usize>>, min_sup: u64) -> Self {
         Candidates {
             data,
             candidates: Default::default(),
             min_sup,
         }
     }
-    pub fn run(&mut self) {
-        self.run_one();
-        self.run_two();
+    pub fn run(&mut self, n: usize) {
+        self.run_one(n);
+        self.run_two(n);
         while !self.candidates.last().unwrap().is_empty() {
             let c_prev: Vec<_> = self.candidates.last().unwrap().iter().collect();
             let mut tree = join_tree(&c_prev, |v| self.can_be_pruned(v));
@@ -29,8 +29,8 @@ impl<'a> Candidates<'a> {
                 break;
             }
             let k = self.candidates.len() + 1;
-            for i in 0..self.data.transactions.len() {
-                nested_loops(|v| tree.increment(&v), &self.data.transactions[i], k);
+            for i in 0..self.data.len() {
+                nested_loops(|v| tree.increment(&v), &self.data[i], k);
             }
             let mut set = HashSet::new();
             for (arr, n) in tree.iter() {
@@ -51,8 +51,8 @@ impl<'a> Candidates<'a> {
         }
         false
     }
-    fn run_one(&mut self) {
-        let mut first = vec![0u64; self.data.num_items];
+    fn run_one(&mut self, n: usize) {
+        let mut first = vec![0u64; n];
         for d in self.data.iter() {
             for &item in d {
                 first[item] += 1;
@@ -66,8 +66,8 @@ impl<'a> Candidates<'a> {
         }
         self.candidates.push(v);
     }
-    fn run_two(&mut self) {
-        let mut second = Array2D::new(self.data.num_items);
+    fn run_two(&mut self, n: usize) {
+        let mut second = Array2D::new(n);
         for d in self.data.iter() {
             for i in 0..d.len() {
                 for j in 0..i {
@@ -111,8 +111,8 @@ mod tests {
             ],
             5,
         );
-        let mut candidates = Candidates::new(&example, 2);
-        candidates.run();
+        let mut candidates = Candidates::new(&example.transactions, 2);
+        candidates.run(example.num_items);
         assert!(candidates.candidates()[1].contains(&vec![0, 1]));
         assert!(candidates.candidates()[1].contains(&vec![0, 2]));
         assert!(candidates.candidates()[1].contains(&vec![0, 4]));

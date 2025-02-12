@@ -18,8 +18,8 @@ impl<'a> Apriori<'a> {
     }
     pub fn run(self) {}
     fn get_candidates(&self) -> Candidates {
-        let mut candidates = Candidates::new(self.data(), self.min_support);
-        candidates.run();
+        let mut candidates = Candidates::new(&self.data().transactions, self.min_support);
+        candidates.run(self.data().num_items);
         candidates
     }
 
