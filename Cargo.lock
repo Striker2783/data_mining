@@ -10,6 +10,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "count_distribution"
+version = "0.1.0"
+dependencies = [
+ "datasets",
+]
+
+[[package]]
 name = "data_mining"
 version = "0.1.0"
 
