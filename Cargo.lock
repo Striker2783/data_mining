@@ -13,6 +13,7 @@ dependencies = [
 name = "count_distribution"
 version = "0.1.0"
 dependencies = [
+ "apriori",
  "datasets",
 ]
 

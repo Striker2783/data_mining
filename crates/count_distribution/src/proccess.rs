@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use apriori::candidates_func::join;
+
 pub struct CDProcess<'a> {
     partition: &'a [Vec<usize>],
     c: &'a Vec<Vec<usize>>,
@@ -16,28 +18,12 @@ impl<'a> CDProcess<'a> {
             self.first(&mut map);
             return map;
         }
-        for i in 0..self.c.len() {
-            for j in (i + 1)..self.c.len() {
-                let c1 = &self.c[i];
-                let c2 = &self.c[j];
-                if c1[..(c1.len() - 1)] != c2[..(c1.len() - 1)] {
-                    continue;
-                }
-                let join = if c1.last().unwrap() > c2.last().unwrap() {
-                    let mut temp = c2.clone();
-                    temp.push(*c1.last().unwrap());
-                    temp
-                } else {
-                    let mut temp = c1.clone();
-                    temp.push(*c2.last().unwrap());
-                    temp
-                };
-                if Self::can_be_pruned(&join, &set) {
-                    continue;
-                }
-                map.insert(join, 0);
+        join(&self.c.iter().collect::<Vec<_>>(), |join| {
+            if Self::can_be_pruned(&join, &set) {
+                return;
             }
-        }
+            map.insert(join, 0);
+        });
         for d in self.partition {
             let mut stack = vec![0; n];
             Self::increment_map(&mut map, d, 0, n, &mut stack);

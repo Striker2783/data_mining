@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 datasets = { path = "../datasets/"}
+apriori = { path = "../apriori/"}

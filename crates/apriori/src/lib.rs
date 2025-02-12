@@ -1,5 +1,5 @@
 pub mod hash_tree;
 pub mod apriori;
-pub(crate) mod array2d;
-pub(crate) mod candidates;
-mod candidates_func;
+pub mod array2d;
+pub mod candidates;
+pub mod candidates_func;
