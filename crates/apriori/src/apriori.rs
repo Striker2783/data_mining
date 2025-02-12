@@ -1,6 +1,6 @@
 use datasets::transaction_set::TransactionSet;
 
-use crate::candidates::Candidates;
+use crate::candidates::CandidatesList;
 #[derive(Debug)]
 pub struct Apriori<'a> {
     data: &'a TransactionSet,
@@ -17,9 +17,9 @@ impl<'a> Apriori<'a> {
         }
     }
     pub fn run(self) {}
-    fn get_candidates(&self) -> Candidates {
-        let mut candidates = Candidates::new(&self.data().transactions, self.min_support);
-        candidates.run(self.data().num_items);
+    fn get_candidates(&self) -> CandidatesList {
+        let mut candidates = CandidatesList::new(self.min_support);
+        candidates.run_apriori(self.data());
         candidates
     }
 
