@@ -1,10 +1,8 @@
 use std::{collections::HashSet, hash::RandomState};
 
-use datasets::transaction_set::TransactionSet;
+use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{
-    array2d::Array2D, candidates_func::join_tree, hash_tree::AprioriHashTree,
-};
+use crate::{array2d::Array2D, candidates_func::join_tree};
 
 #[derive(Debug)]
 pub struct Candidates<'a> {
@@ -31,9 +29,8 @@ impl<'a> Candidates<'a> {
                 break;
             }
             let k = self.candidates.len() + 1;
-            let mut stack = vec![0; k];
             for i in 0..self.data.transactions.len() {
-                Self::add_to_tree(&mut tree, &self.data.transactions[i], 0, k, &mut stack);
+                nested_loops(|v| tree.increment(&v), &self.data.transactions[i], k);
             }
             let mut set = HashSet::new();
             for (arr, n) in tree.iter() {
@@ -42,27 +39,6 @@ impl<'a> Candidates<'a> {
                 }
             }
             self.candidates.push(set);
-        }
-    }
-    fn add_to_tree<const N: usize>(
-        tree: &mut AprioriHashTree<N>,
-        data: &[usize],
-        i: usize,
-        k: usize,
-        stack: &mut [usize],
-    ) {
-        if i == k {
-            let mut v = Vec::new();
-            for i in stack {
-                v.push(data[*i]);
-            }
-            tree.increment(&v);
-            return;
-        }
-        let start = if i == 0 { 0 } else { stack[i - 1] + 1 };
-        for j in start..data.len() {
-            stack[i] = j;
-            Self::add_to_tree(tree, data, i + 1, k, stack);
         }
     }
     fn can_be_pruned(&self, v: &[usize]) -> bool {

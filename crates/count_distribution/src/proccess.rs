@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use apriori::candidates_func::join;
+use datasets::utils::nested_loops;
 
 pub struct CDProcess<'a> {
     partition: &'a [Vec<usize>],
@@ -25,31 +26,15 @@ impl<'a> CDProcess<'a> {
             map.insert(join, 0);
         });
         for d in self.partition {
-            let mut stack = vec![0; n];
-            Self::increment_map(&mut map, d, 0, n, &mut stack);
+            nested_loops(
+                |v| {
+                    map.entry(v).and_modify(|n| *n += 1);
+                },
+                d,
+                n,
+            );
         }
         map
-    }
-    fn increment_map(
-        map: &mut HashMap<Vec<usize>, u64>,
-        data: &[usize],
-        i: usize,
-        k: usize,
-        stack: &mut [usize],
-    ) {
-        if i == k {
-            let mut v = Vec::new();
-            for i in stack {
-                v.push(data[*i]);
-            }
-            map.entry(v).and_modify(|n| *n += 1);
-            return;
-        }
-        let start = if i == 0 { 0 } else { stack[i - 1] + 1 };
-        for j in start..data.len() {
-            stack[i] = j;
-            Self::increment_map(map, data, i + 1, k, stack);
-        }
     }
     fn first(&self, map: &mut HashMap<Vec<usize>, u64>) {
         for v in self.partition {
