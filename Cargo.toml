@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+apriori = { path = "./crates/apriori/" }
+clap = { version = "4.5.29", features = ["derive"] }
+count_distribution = { path = "./crates/count_distribution/" }
+datasets = { path = "./crates/datasets/" }
 
 [workspace]
 members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/dhp"]

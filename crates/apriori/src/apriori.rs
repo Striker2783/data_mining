@@ -16,8 +16,7 @@ impl<'a> Apriori<'a> {
             min_confidence,
         }
     }
-    pub fn run(self) {}
-    fn get_candidates(&self) -> CandidatesList {
+    pub fn run(self) -> CandidatesList {
         let mut candidates = CandidatesList::new(self.min_support);
         candidates.run_apriori(self.data());
         candidates

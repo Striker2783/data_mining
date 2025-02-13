@@ -16,7 +16,7 @@ impl CountDistrubtion {
         Self { data, threads, candidates: Vec::new(), min_sup }
     }
     
-    pub fn run(&mut self) {
+    pub fn run(mut self) -> Vec<Arc<Vec<Vec<usize>>>> {
         for i in 1.. {
             let mut handles = Vec::new();
             for thread in 0..self.threads {
@@ -51,6 +51,7 @@ impl CountDistrubtion {
                     .collect(),
             ));
         }
+        self.candidates
     }
     fn partition(data: &Arc<TransactionSet>, threads: usize, thread: usize) -> (usize, usize) {
         let count = data.transactions.len() / threads;
@@ -86,15 +87,15 @@ mod tests {
             ],
             5,
         ));
-        let mut cd = CountDistrubtion::new(example, 8, 2);
-        cd.run();
-        assert!(cd.candidates[0].contains(&vec![0]));
-        assert!(cd.candidates[0].contains(&vec![1]));
-        assert!(cd.candidates[0].contains(&vec![2]));
-        assert!(cd.candidates[0].contains(&vec![3]));
-        assert!(cd.candidates[0].contains(&vec![4]));
-        assert_eq!(cd.candidates[0].len(), 5);
-        assert_eq!(cd.candidates[1].len(), 6);
-        assert_eq!(cd.candidates[2].len(), 2);
+        let cd = CountDistrubtion::new(example, 8, 2);
+        let cd = cd.run();
+        assert!(cd[0].contains(&vec![0]));
+        assert!(cd[0].contains(&vec![1]));
+        assert!(cd[0].contains(&vec![2]));
+        assert!(cd[0].contains(&vec![3]));
+        assert!(cd[0].contains(&vec![4]));
+        assert_eq!(cd[0].len(), 5);
+        assert_eq!(cd[1].len(), 6);
+        assert_eq!(cd[2].len(), 2);
     }
 }
