@@ -1,0 +1,104 @@
+use std::collections::{HashMap, HashSet};
+
+use datasets::utils::nested_loops;
+
+use crate::{candidates_func::join, hash_tree::AprioriHashTree};
+#[derive(Debug)]
+pub struct TransactionID {
+    v: HashSet<Vec<usize>>,
+}
+
+impl TransactionID {
+    pub fn new(v: HashSet<Vec<usize>>) -> Self {
+        Self { v }
+    }
+
+    pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
+        join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+            set.increment(&curr);
+        });
+    }
+    pub fn from_prev(&self, set: &HashSet<Vec<usize>>) -> Self {
+        let mut v = HashSet::new();
+        join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+            if set.contains(&curr) {
+                v.insert(curr);
+            }
+        });
+        Self { v }
+    }
+    pub fn start(data: &Vec<usize>) -> Self {
+        Self::new(data.iter().cloned().map(|n| vec![n]).collect())
+    }
+    pub fn from_transaction(data: &Vec<usize>, k: usize, set: &HashSet<Vec<usize>>) -> Self {
+        let mut output = HashSet::new();
+        nested_loops(
+            |a| {
+                if set.contains(&a) {
+                    output.insert(a);
+                }
+            },
+            &data,
+            k,
+        );
+        Self { v: output }
+    }
+    pub fn ids(&self) -> &HashSet<Vec<usize>> {
+        &self.v
+    }
+}
+
+pub trait TransactionIdCounts {
+    fn increment(&mut self, v: &[usize]);
+}
+impl TransactionIdCounts for HashMap<Vec<usize>, u64> {
+    fn increment(&mut self, v: &[usize]) {
+        match self.get_mut(v) {
+            Some(a) => *a += 1,
+            None => (),
+        }
+    }
+}
+impl<const N: usize> TransactionIdCounts for AprioriHashTree<N> {
+    fn increment(&mut self, v: &[usize]) {
+        self.increment(v);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::vec;
+
+    use super::*;
+    #[test]
+    fn test_transaction_id() {
+        let transaction = TransactionID::start(&vec![1, 2, 3, 5]);
+        for n in [1, 2, 3, 5] {
+            assert!(transaction.ids().contains(&vec![n]));
+        }
+        let mut map = HashMap::new();
+        for v in [
+            vec![1, 2],
+            vec![1, 3],
+            vec![1, 5],
+            vec![2, 3],
+            vec![2, 5],
+            vec![3, 5],
+            vec![1, 4],
+        ] {
+            map.insert(v, 0);
+        }
+        transaction.count(&mut map);
+        assert_eq!(map[&vec![1, 2]], 1);
+        assert_eq!(map[&vec![1, 3]], 1);
+        assert_eq!(map[&vec![1, 5]], 1);
+        assert_eq!(map[&vec![1, 4]], 0);
+        let set = map
+            .into_iter()
+            .filter_map(|(k, v)| if v > 0 { Some(k) } else { None })
+            .collect::<HashSet<_>>();
+        let next = transaction.from_prev(&set);
+        assert!(next.ids().contains(&vec![1, 3]));
+        assert_eq!(next.ids().len(), 6);
+    }
+}

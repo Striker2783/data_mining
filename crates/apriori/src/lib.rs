@@ -3,3 +3,4 @@ pub mod apriori;
 pub mod array2d;
 pub mod candidates;
 pub mod candidates_func;
+pub mod transaction_id;
