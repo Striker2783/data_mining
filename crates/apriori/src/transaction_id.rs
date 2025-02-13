@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use datasets::utils::nested_loops;
+use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
 use crate::{candidates_func::join, hash_tree::AprioriHashTree};
+#[derive(Debug)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
 }
@@ -36,6 +37,11 @@ impl TransactionIDs {
             v.push(TransactionID::from_transaction(d, k, set));
         }
         Self::new(v)
+    }
+}
+impl From<&TransactionSet> for TransactionIDs {
+    fn from(transaction_set: &TransactionSet) -> Self {
+        Self::start(&transaction_set.transactions)
     }
 }
 

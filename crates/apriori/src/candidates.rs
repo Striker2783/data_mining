@@ -89,4 +89,8 @@ impl Candidates {
     pub fn data(&self) -> &HashSet<Vec<usize>> {
         &self.data
     }
+
+    pub fn data_owned(self) -> HashSet<Vec<usize>> {
+        self.data
+    }
 }
