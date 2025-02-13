@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::hash_tree::AprioriHashTree;
 
 pub fn join_tree<T: FnMut(&[usize]) -> bool>(
@@ -15,23 +17,27 @@ pub fn join_tree<T: FnMut(&[usize]) -> bool>(
 }
 
 pub fn join<T: FnMut(Vec<usize>)>(v: &[&Vec<usize>], mut f: T) {
-    for i in 0..v.len() {
-        for j in (i + 1)..v.len() {
-            let c1 = v[i];
-            let c2 = v[j];
-            if c1[..(c1.len() - 1)] != c2[..(c1.len() - 1)] {
-                continue;
+    let mut map = HashMap::new();
+    for c in v.iter() {
+        map.entry(&c[..(c.len() - 1)])
+            .and_modify(|v: &mut Vec<usize>| v.push(c.last().unwrap().clone()))
+            .or_insert(vec![c.last().unwrap().clone()]);
+    }
+    for (k, v) in map.into_iter() {
+        for i in 0..v.len() {
+            for j in (i + 1)..v.len() {
+                let c1 = v[i];
+                let c2 = v[j];
+                let mut join = k.to_vec();
+                if c2 > c1 {
+                    join.push(c1);
+                    join.push(c2);
+                } else {
+                    join.push(c2);
+                    join.push(c1);
+                }
+                f(join);
             }
-            let join = if c1.last().unwrap() > c2.last().unwrap() {
-                let mut temp = c2.clone();
-                temp.push(*c1.last().unwrap());
-                temp
-            } else {
-                let mut temp = c1.clone();
-                temp.push(*c2.last().unwrap());
-                temp
-            };
-            f(join)
         }
     }
 }
