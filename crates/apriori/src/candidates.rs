@@ -5,7 +5,7 @@ use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 use crate::{array2d::Array2D, candidates_func::join, hash_tree::AprioriHashTree};
 
 pub struct CandidatesList {
-    candidates: Vec<HashSet<Vec<usize>>>,
+    candidates: Vec<Candidates>,
     min_sup: u64,
 }
 
@@ -18,91 +18,91 @@ impl CandidatesList {
     }
 
     pub fn run_apriori(&mut self, data: &TransactionSet) {
-        let empty = HashSet::new();
+        let empty = Candidates::default();
         for i in 1.. {
             let prev = self.candidates.last().unwrap_or(&empty);
-            let candidates = Candidates::new(&data.transactions, prev, self.min_sup);
-            let result = candidates.run(i, data.num_items);
-            if result.is_empty() {
+            let candidates = prev.next(prev, &data, i, self.min_sup);
+            if candidates.data().is_empty() {
                 break;
             }
-            self.candidates.push(result);
+            self.candidates.push(candidates);
         }
     }
 
-    pub fn candidates(&self) -> &[HashSet<Vec<usize>>] {
+    pub fn candidates(&self) -> &[Candidates] {
         &self.candidates
     }
 }
 
-#[derive(Debug)]
-pub struct Candidates<'a> {
-    prev_candidates: &'a HashSet<Vec<usize>>,
-    data: &'a [Vec<usize>],
-    min_sup: u64,
+#[derive(Debug, Default)]
+pub struct Candidates {
+    data: HashSet<Vec<usize>>,
 }
 
-impl<'a> Candidates<'a> {
-    pub fn new(data: &'a [Vec<usize>], prev: &'a HashSet<Vec<usize>>, min_sup: u64) -> Self {
-        Candidates {
-            data,
-            prev_candidates: prev,
-            min_sup,
-        }
+impl Candidates {
+    pub fn new(data: HashSet<Vec<usize>>) -> Self {
+        Self { data }
     }
-    pub fn run(mut self, i: usize, n: usize) -> HashSet<Vec<usize>> {
+
+    pub fn next(
+        &self,
+        prev: &Self,
+        data: &TransactionSet,
+        i: usize,
+        min_sup: u64,
+    ) -> Self {
         if i == 1 {
-            self.run_one(n)
+            Self::run_one(data, min_sup)
         } else if i == 2 {
-            self.run_two(n)
+            Self::run_two(data, min_sup)
         } else {
             let mut tree = AprioriHashTree::<50>::new();
-            join(&self.prev_candidates.iter().collect::<Vec<_>>(), |v| {
-                if self.can_be_pruned(&v) {
+            join(&prev.data.iter().collect::<Vec<_>>(), |v| {
+                if self.can_be_pruned(prev, &v) {
                     return;
                 }
                 tree.add(&v);
             });
-            for idx in 0..self.data.len() {
-                nested_loops(|v| tree.increment(&v), &self.data[idx], i);
+            for idx in 0..data.transactions.len() {
+                nested_loops(|v| tree.increment(&v), &data.transactions[idx], i);
             }
             let mut set = HashSet::new();
             for (arr, n) in tree.iter() {
-                if n >= self.min_sup {
+                if n >= min_sup {
                     set.insert(arr.to_vec());
                 }
             }
-            set
+            Self::new(set)
         }
     }
-    fn can_be_pruned(&self, v: &[usize]) -> bool {
+    fn can_be_pruned(&self, prev: &Self, v: &[usize]) -> bool {
         let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
         for i in 0..(v.len() - 2) {
-            if !self.prev_candidates.contains(&arr) {
+            if !prev.data.contains(&arr) {
                 return true;
             }
             arr[i] = v[i + 1];
         }
         false
     }
-    fn run_one(&mut self, n: usize) -> HashSet<Vec<usize>> {
-        let mut first = vec![0u64; n];
-        for d in self.data.iter() {
+    fn run_one(data: &TransactionSet, min_sup: u64) -> Self {
+        let mut first = vec![0u64; data.num_items];
+        for d in data.iter() {
             for &item in d {
                 first[item] += 1;
             }
         }
         let mut v = HashSet::new();
         for (i, n) in first.into_iter().enumerate() {
-            if n >= self.min_sup {
+            if n >= min_sup {
                 v.insert(vec![i]);
             }
         }
-        v
+        Self::new(v)
     }
-    fn run_two(&mut self, n: usize) -> HashSet<Vec<usize>> {
-        let mut second = Array2D::new(n);
-        for d in self.data.iter() {
+    fn run_two(data: &TransactionSet, min_sup: u64) -> Self {
+        let mut second = Array2D::new(data.num_items);
+        for d in data.iter() {
             for i in 0..d.len() {
                 for j in 0..i {
                     second.increment(d[i], d[j]);
@@ -111,11 +111,15 @@ impl<'a> Candidates<'a> {
         }
         let mut v = HashSet::new();
         for (r, c, count) in second.iter() {
-            if count >= self.min_sup {
+            if count >= min_sup {
                 v.insert(vec![c, r]);
             }
         }
-        v
+        Self::new(v)
+    }
+
+    pub fn data(&self) -> &HashSet<Vec<usize>> {
+        &self.data
     }
 }
 
@@ -143,14 +147,14 @@ mod tests {
         );
         let mut candidates = CandidatesList::new(2);
         candidates.run_apriori(&example);
-        assert!(candidates.candidates()[1].contains(&vec![0, 1]));
-        assert!(candidates.candidates()[1].contains(&vec![0, 2]));
-        assert!(candidates.candidates()[1].contains(&vec![0, 4]));
-        assert!(candidates.candidates()[1].contains(&vec![1, 2]));
-        assert!(candidates.candidates()[1].contains(&vec![1, 3]));
-        assert!(candidates.candidates()[1].contains(&vec![1, 4]));
-        assert_eq!(candidates.candidates()[1].len(), 6);
+        assert!(candidates.candidates()[1].data().contains(&vec![0, 1]));
+        assert!(candidates.candidates()[1].data().contains(&vec![0, 2]));
+        assert!(candidates.candidates()[1].data().contains(&vec![0, 4]));
+        assert!(candidates.candidates()[1].data().contains(&vec![1, 2]));
+        assert!(candidates.candidates()[1].data().contains(&vec![1, 3]));
+        assert!(candidates.candidates()[1].data().contains(&vec![1, 4]));
+        assert_eq!(candidates.candidates()[1].data().len(), 6);
         assert_eq!(candidates.candidates().len(), 3);
-        assert_eq!(candidates.candidates()[2].len(), 2);
+        assert_eq!(candidates.candidates()[2].data().len(), 2);
     }
 }
