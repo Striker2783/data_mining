@@ -30,9 +30,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     match args.algorithm {
         Algorithms::Apriori => {
-            let apriori = Apriori::new(&t, (t.transactions.len() / 100) as u64, 2);
-            let candidates = apriori.run();
-            println!("{:?}", candidates.candidates());
+            let apriori = Apriori::new((t.transactions.len() / 100) as u64);
+            let candidates = apriori.run(&t);
+            println!("{:?}", candidates);
         },
         Algorithms::CountDistribution => {
             let t = Arc::new(t);
