@@ -3,6 +3,42 @@ use std::collections::{HashMap, HashSet};
 use datasets::utils::nested_loops;
 
 use crate::{candidates_func::join, hash_tree::AprioriHashTree};
+pub struct TransactionIDs {
+    v: Vec<TransactionID>,
+}
+
+impl TransactionIDs {
+    pub fn new(v: Vec<TransactionID>) -> Self {
+        Self { v }
+    }
+    pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
+        for d in &self.v {
+            d.count(set);
+        }
+    }
+    pub fn from_prev(&self, set: &HashSet<Vec<usize>>) -> TransactionIDs {
+        let mut v = Vec::new();
+        for d in &self.v {
+            v.push(d.from_prev(set));
+        }
+        Self::new(v)
+    }
+    pub fn start(data: &Vec<Vec<usize>>) -> TransactionIDs {
+        let mut v = Vec::new();
+        for d in data {
+            v.push(TransactionID::start(d));
+        }
+        Self::new(v)
+    }
+    pub fn from_transaction(data: &Vec<Vec<usize>>, k: usize, set: &HashSet<Vec<usize>>) -> Self {
+        let mut v = Vec::new();
+        for d in data {
+            v.push(TransactionID::from_transaction(d, k, set));
+        }
+        Self::new(v)
+    }
+}
+
 #[derive(Debug)]
 pub struct TransactionID {
     v: HashSet<Vec<usize>>,
