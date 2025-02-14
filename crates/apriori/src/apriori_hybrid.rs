@@ -1,8 +1,6 @@
-use std::collections::HashSet;
-
 use datasets::transaction_set::TransactionSet;
 
-use crate::{candidates::Candidates, candidates_tid::CandidateTid, transaction_id::TransactionIDs};
+use crate::{candidates::Candidates, candidates_tid::CandidateTid, transaction_id::TransactionIDs, CandidateType};
 
 pub struct AprioriHybrid {
     min_support: u64,
@@ -13,7 +11,7 @@ impl AprioriHybrid {
     pub fn new(min_support: u64, switch: usize) -> Self {
         AprioriHybrid { min_support, switch }
     }
-    pub fn run(&self, data: &TransactionSet) -> Vec<HashSet<Vec<usize>>> {
+    pub fn run(&self, data: &TransactionSet) -> Vec<CandidateType> {
         let mut apriori = vec![Candidates::run_one(data, self.min_support)];
         let mut apriori_tid = Vec::new();
         let mut prev_trans = TransactionIDs::default();
@@ -51,7 +49,7 @@ impl AprioriHybrid {
     }
 }
 
-pub struct BasicCandidates(pub HashSet<Vec<usize>>);
+pub struct BasicCandidates(pub CandidateType);
 impl From<Candidates> for BasicCandidates {
     fn from(candidates: Candidates) -> Self {
         Self(candidates.data_owned())

@@ -2,19 +2,22 @@ use std::collections::HashSet;
 
 use datasets::transaction_set::TransactionSet;
 
-use crate::{apriori_hybrid::BasicCandidates, candidates::Candidates, candidates_func::join, hash_tree::AprioriHashTree, transaction_id::TransactionIDs};
+use crate::{
+    CandidateType, apriori_hybrid::BasicCandidates, candidates::Candidates, candidates_func::join,
+    hash_tree::AprioriHashTree, transaction_id::TransactionIDs,
+};
 
 #[derive(Debug)]
 pub struct CandidateTid {
-    candidates: HashSet<Vec<usize>>
+    candidates: CandidateType,
 }
 impl CandidateTid {
-    pub fn new(candidates: HashSet<Vec<usize>>) -> Self {
+    pub fn new(candidates: CandidateType) -> Self {
         Self { candidates }
     }
-    pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Self {
+    pub fn next_i(s: &CandidateType, data: &TransactionIDs, min_sup: u64) -> Self {
         let mut tree: AprioriHashTree<50> = AprioriHashTree::new();
-        join(&self.candidates.iter().collect::<Vec<_>>(), |join| {
+        join(&s.iter().collect::<Vec<_>>(), |join| {
             tree.add(&join);
         });
         data.count(&mut tree);
@@ -27,15 +30,18 @@ impl CandidateTid {
         });
         Self::new(new_candidates)
     }
+    pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Self {
+        Self::next_i(&self.candidates, data, min_sup)
+    }
     pub fn one(data: &TransactionSet, min_sup: u64) -> Self {
         Self::from(BasicCandidates::from(Candidates::run_one(data, min_sup)))
     }
-    
-    pub fn candidates(&self) -> &HashSet<Vec<usize>> {
+
+    pub fn candidates(&self) -> &CandidateType {
         &self.candidates
     }
 
-    pub fn candidates_owned(self) -> HashSet<Vec<usize>> {
+    pub fn candidates_owned(self) -> CandidateType {
         self.candidates
     }
 }

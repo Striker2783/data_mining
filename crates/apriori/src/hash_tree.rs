@@ -143,9 +143,9 @@ impl<const N: usize> AprioriHashTree<N> {
     pub fn remove(&mut self, v: &[usize]) -> Option<(Vec<usize>, u64)> {
         let leaf = self.get_leaf_mut(v);
         if let Some(l) = leaf {
-            return l.remove(v);
+            l.remove(v)
         } else {
-            return None;
+            None
         }
     }
     pub fn iter(&self) -> HashTreeIterator<N> {
@@ -153,6 +153,10 @@ impl<const N: usize> AprioriHashTree<N> {
     }
     pub fn len(&self) -> usize {
         self.length
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -205,7 +209,7 @@ impl HashTreeLeafNode {
                 return Some(self.0.remove(i));
             }
         }
-        return None;
+        None
     }
 }
 pub struct HashTreeIterator<'a, const N: usize> {

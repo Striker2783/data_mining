@@ -2,31 +2,29 @@ use std::collections::HashSet;
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{apriori_hybrid::BasicCandidates, array2d::Array2D, candidates_func::join, hash_tree::AprioriHashTree};
+use crate::{
+    CandidateType, apriori_hybrid::BasicCandidates, array2d::Array2D, candidates_func::join,
+    hash_tree::AprioriHashTree,
+};
 #[derive(Debug, Default)]
 pub struct Candidates {
-    data: HashSet<Vec<usize>>,
+    data: CandidateType,
 }
 
 impl Candidates {
-    pub fn new(data: HashSet<Vec<usize>>) -> Self {
+    pub fn new(data: CandidateType) -> Self {
         Self { data }
     }
 
-    pub fn next(
-        &self,
-        data: &TransactionSet,
-        i: usize,
-        min_sup: u64,
-    ) -> Self {
+    pub fn next_i(s: &CandidateType, data: &TransactionSet, i: usize, min_sup: u64) -> Candidates {
         if i == 1 {
             Self::run_one(data, min_sup)
         } else if i == 2 {
             Self::run_two(data, min_sup)
         } else {
             let mut tree = AprioriHashTree::<50>::new();
-            join(&self.data.iter().collect::<Vec<_>>(), |v| {
-                if self.can_be_pruned(&v) {
+            join(&s.iter().collect::<Vec<_>>(), |v| {
+                if Self::can_be_pruned(s, &v) {
                     return;
                 }
                 tree.add(&v);
@@ -43,10 +41,14 @@ impl Candidates {
             Self::new(set)
         }
     }
-    fn can_be_pruned(&self, v: &[usize]) -> bool {
+
+    pub fn next(&self, data: &TransactionSet, i: usize, min_sup: u64) -> Self {
+        Self::next_i(&self.data, data, i, min_sup)
+    }
+    fn can_be_pruned(data: &CandidateType, v: &[usize]) -> bool {
         let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
         for i in 0..(v.len() - 2) {
-            if !self.data.contains(&arr) {
+            if !data.contains(&arr) {
                 return true;
             }
             arr[i] = v[i + 1];
@@ -86,11 +88,11 @@ impl Candidates {
         Self::new(v)
     }
 
-    pub fn data(&self) -> &HashSet<Vec<usize>> {
+    pub fn data(&self) -> &CandidateType {
         &self.data
     }
 
-    pub fn data_owned(self) -> HashSet<Vec<usize>> {
+    pub fn data_owned(self) -> CandidateType {
         self.data
     }
 }
