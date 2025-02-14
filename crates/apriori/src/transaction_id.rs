@@ -88,8 +88,8 @@ impl TransactionID {
         let mut output = HashSet::new();
         nested_loops(
             |a| {
-                if set.contains(&a) {
-                    output.insert(a);
+                if set.contains(a) {
+                    output.insert(a.to_vec());
                 }
             },
             &data,

@@ -27,8 +27,9 @@ impl<'a> CDProcess<'a> {
         });
         for d in self.partition {
             nested_loops(
-                |v| {
-                    map.entry(v).and_modify(|n| *n += 1);
+                |v| match map.get_mut(v) {
+                    Some(a) => *a += 1,
+                    None => (),
                 },
                 d,
                 n,
