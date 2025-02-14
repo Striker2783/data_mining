@@ -1,46 +1,27 @@
-use std::{fs::File, path::PathBuf, sync::Arc};
+use std::time::Instant;
 
-use apriori::apriori::Apriori;
-use clap::{Parser, ValueEnum};
-use count_distribution::count_distribution::CountDistrubtion;
-use datasets::transaction_set::TransactionSet;
+use clap::Parser;
+use data_mining::Commands;
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Arguments {
-    #[arg(short, long, default_value = "dat")]
-    file_type: String,
-    #[arg(short, long, required = true)]
-    path: PathBuf,
-    #[arg(short, long, required = true)]
-    algorithm: Algorithms,
-}
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum Algorithms {
-    Apriori,
-    CountDistribution,
+    #[command(subcommand)]
+    command: Commands,
+    #[arg(short, long, default_value_t = false)]
+    time: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let f = File::open(&args.path)?;
-    let t = match args.file_type.as_str() {
-        "dat" => TransactionSet::from_dat(f),
-        _ => return Err("Unsupported file type".into()),
-    };
-    match args.algorithm {
-        Algorithms::Apriori => {
-            let apriori = Apriori::new((t.transactions.len() / 100) as u64);
-            let candidates = apriori.run(&t);
-            println!("{:?}", candidates);
-        },
-        Algorithms::CountDistribution => {
-            let t = Arc::new(t);
-            let min_sup = (t.transactions.len() / 100) as u64;
-            let count_distribution = CountDistrubtion::new(t, 8, min_sup);
-            let candidates = count_distribution.run();
-            println!("{:?}", candidates);
-        },
-    };
+
+    if args.time {
+        let start = Instant::now();
+        args.command.run()?;
+        println!("Time taken: {:?}", start.elapsed());
+    } else {
+        args.command.run()?;
+    }
+
     Ok(())
 }
