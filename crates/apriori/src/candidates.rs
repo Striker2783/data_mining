@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{array2d::Array2D, candidates_func::join, hash_tree::AprioriHashTree};
+use crate::{apriori_hybrid::BasicCandidates, array2d::Array2D, candidates_func::join, hash_tree::AprioriHashTree};
 #[derive(Debug, Default)]
 pub struct Candidates {
     data: HashSet<Vec<usize>>,
@@ -92,5 +92,10 @@ impl Candidates {
 
     pub fn data_owned(self) -> HashSet<Vec<usize>> {
         self.data
+    }
+}
+impl From<BasicCandidates> for Candidates {
+    fn from(value: BasicCandidates) -> Self {
+        Self::new(value.0)
     }
 }

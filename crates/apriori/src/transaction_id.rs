@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
 use crate::{candidates_func::join, hash_tree::AprioriHashTree};
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
 }
@@ -20,21 +20,33 @@ impl TransactionIDs {
     pub fn from_prev(&self, set: &HashSet<Vec<usize>>) -> TransactionIDs {
         let mut v = Vec::new();
         for d in &self.v {
-            v.push(d.from_prev(set));
+            let value = d.from_prev(set);
+            if value.ids().is_empty() {
+                continue;
+            }
+            v.push(value);
         }
         Self::new(v)
     }
     pub fn start(data: &Vec<Vec<usize>>) -> TransactionIDs {
         let mut v = Vec::new();
         for d in data {
-            v.push(TransactionID::start(d));
+            let value = TransactionID::start(d);
+            if value.ids().is_empty() {
+                continue;
+            }
+            v.push(value);
         }
         Self::new(v)
     }
     pub fn from_transaction(data: &Vec<Vec<usize>>, k: usize, set: &HashSet<Vec<usize>>) -> Self {
         let mut v = Vec::new();
         for d in data {
-            v.push(TransactionID::from_transaction(d, k, set));
+            let value = TransactionID::from_transaction(d, k, set);
+            if value.ids().is_empty() {
+                continue;
+            }
+            v.push(value);
         }
         Self::new(v)
     }
@@ -45,7 +57,7 @@ impl From<&TransactionSet> for TransactionIDs {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TransactionID {
     v: HashSet<Vec<usize>>,
 }

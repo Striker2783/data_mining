@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use datasets::transaction_set::TransactionSet;
 
-use crate::{candidates::Candidates, candidates_func::join, hash_tree::AprioriHashTree, transaction_id::TransactionIDs};
+use crate::{apriori_hybrid::BasicCandidates, candidates::Candidates, candidates_func::join, hash_tree::AprioriHashTree, transaction_id::TransactionIDs};
 
 #[derive(Debug)]
 pub struct CandidateTid {
@@ -28,15 +28,19 @@ impl CandidateTid {
         Self::new(new_candidates)
     }
     pub fn one(data: &TransactionSet, min_sup: u64) -> Self {
-        Candidates::run_one(data, min_sup).into()
+        Self::from(BasicCandidates::from(Candidates::run_one(data, min_sup)))
     }
     
     pub fn candidates(&self) -> &HashSet<Vec<usize>> {
         &self.candidates
     }
+
+    pub fn candidates_owned(self) -> HashSet<Vec<usize>> {
+        self.candidates
+    }
 }
-impl From<Candidates> for CandidateTid {
-    fn from(candidates: Candidates) -> Self {
-        Self { candidates: candidates.data_owned() }
+impl From<BasicCandidates> for CandidateTid {
+    fn from(candidates: BasicCandidates) -> Self {
+        Self::new(candidates.0)
     }
 }
