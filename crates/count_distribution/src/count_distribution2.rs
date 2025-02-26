@@ -58,7 +58,7 @@ impl CountDistribution {
             }
             let mut set = Candidates::default();
             for (k, v) in map {
-                if v > self.min_sup {
+                if v >= self.min_sup {
                     set.insert(k);
                 }
             }
@@ -89,7 +89,7 @@ impl CountDistribution {
         }
         let mut map = Candidates::default();
         for (r, c, v) in results[0].iter() {
-            if v > self.min_sup {
+            if v >= self.min_sup {
                 map.insert(vec![c, r]);
             }
         }
@@ -171,6 +171,7 @@ mod tests {
         assert!(cd[0].contains(&vec![2]));
         assert!(cd[0].contains(&vec![3]));
         assert!(cd[0].contains(&vec![4]));
+        println!("{:?}", cd[1]);
         assert_eq!(cd[0].len(), 5);
         assert_eq!(cd[1].len(), 6);
         assert_eq!(cd[2].len(), 2);
