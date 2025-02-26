@@ -3,10 +3,7 @@ use std::ops::Deref;
 use datasets::transaction_set::TransactionSet;
 
 use crate::{
-    apriori::{AprioriCandidates, apriori_run_one},
-    candidates::Candidates,
-    candidates_tid::AprioriTiDCandidates,
-    transaction_id::TransactionIDs,
+    apriori::{apriori_run_one, AprioriCandidates}, apriori_tid::AprioriTiDCandidates, candidates::Candidates, transaction_id::TransactionIDs
 };
 
 pub struct AprioriHybrid {
