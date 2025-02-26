@@ -1,6 +1,13 @@
+use std::ops::Deref;
+
 use datasets::transaction_set::TransactionSet;
 
-use crate::{apriori::run_one, candidates::Candidates, candidates_tid::next, transaction_id::TransactionIDs};
+use crate::{
+    apriori::{AprioriCandidates, apriori_run_one},
+    candidates::Candidates,
+    candidates_tid::AprioriTiDCandidates,
+    transaction_id::TransactionIDs,
+};
 
 pub struct AprioriHybrid {
     min_support: u64,
@@ -9,28 +16,32 @@ pub struct AprioriHybrid {
 
 impl AprioriHybrid {
     pub fn new(min_support: u64, switch: usize) -> Self {
-        AprioriHybrid { min_support, switch }
+        AprioriHybrid {
+            min_support,
+            switch,
+        }
     }
     pub fn run(&self, data: &TransactionSet) -> Vec<Candidates> {
-        let mut apriori = vec![run_one(data, self.min_support)];
+        let mut apriori = vec![apriori_run_one(data, self.min_support)];
         let mut apriori_tid = Vec::new();
         let mut prev_trans = TransactionIDs::default();
         for i in 2.. {
             if i == self.switch {
                 let prev = apriori.pop().unwrap();
-                prev_trans = TransactionIDs::from_transaction(&data.transactions, i-1,&prev);
+                prev_trans = TransactionIDs::from_transaction(&data.transactions, i - 1, &prev);
                 apriori_tid.push(prev);
             }
             if i < self.switch {
                 let prev = apriori.last().unwrap();
-                let next = next(prev, &prev_trans, self.min_support);
+                let next = AprioriCandidates::new(prev.deref()).run(data, i, self.min_support);
                 if next.is_empty() {
                     break;
                 }
                 apriori.push(next);
             } else {
                 let prev = apriori_tid.last().unwrap();
-                let next = next(prev, &prev_trans, self.min_support);
+                let next =
+                    AprioriTiDCandidates::new(prev.deref()).next(&prev_trans, self.min_support);
                 if next.is_empty() {
                     break;
                 }
