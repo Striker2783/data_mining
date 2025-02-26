@@ -17,7 +17,7 @@ impl AprioriArgs {
         let data = TransactionSet::from_dat(f);
         let result = Apriori::new(self.support_count).run(&data);
         for c in result {
-            print_candidate(c.data_owned().iter());
+            print_candidate(c.iter());
         }
         Ok(())
     }

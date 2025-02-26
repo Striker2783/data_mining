@@ -1,8 +1,8 @@
-use std::ops::{Deref, DerefMut};
+use std::{collections::HashSet, ops::{Deref, DerefMut}};
 
-type CandidateType = Vec<Vec<usize>>;
+pub type CandidateType = HashSet<Vec<usize>>;
 
-#[derive(Debug, Default, Hash, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Candidates(CandidateType);
 impl Candidates {
     pub fn new(v: CandidateType) -> Self {
