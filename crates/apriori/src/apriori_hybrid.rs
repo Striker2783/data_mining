@@ -1,6 +1,6 @@
 use datasets::transaction_set::TransactionSet;
 
-use crate::{candidates::Candidates, candidates_tid::CandidateTid, transaction_id::TransactionIDs, CandidateType};
+use crate::{apriori::run_one, candidates::Candidates, candidates_tid::next, transaction_id::TransactionIDs};
 
 pub struct AprioriHybrid {
     min_support: u64,
@@ -11,53 +11,41 @@ impl AprioriHybrid {
     pub fn new(min_support: u64, switch: usize) -> Self {
         AprioriHybrid { min_support, switch }
     }
-    pub fn run(&self, data: &TransactionSet) -> Vec<CandidateType> {
-        let mut apriori = vec![Candidates::run_one(data, self.min_support)];
+    pub fn run(&self, data: &TransactionSet) -> Vec<Candidates> {
+        let mut apriori = vec![run_one(data, self.min_support)];
         let mut apriori_tid = Vec::new();
         let mut prev_trans = TransactionIDs::default();
         for i in 2.. {
             if i == self.switch {
                 let prev = apriori.pop().unwrap();
-                prev_trans = TransactionIDs::from_transaction(&data.transactions, i-1,prev.data());
-                apriori_tid.push(CandidateTid::from(BasicCandidates::from(prev)));
+                prev_trans = TransactionIDs::from_transaction(&data.transactions, i-1,&prev);
+                apriori_tid.push(prev);
             }
             if i < self.switch {
                 let prev = apriori.last().unwrap();
-                let next = prev.next(data, i, self.min_support);
-                if next.data().is_empty() {
+                let next = next(&prev, &prev_trans, self.min_support);
+                if next.is_empty() {
                     break;
                 }
                 apriori.push(next);
             } else {
                 let prev = apriori_tid.last().unwrap();
-                let next = prev.next(&prev_trans, self.min_support);
-                if next.candidates().is_empty() {
+                let next = next(prev, &prev_trans, self.min_support);
+                if next.is_empty() {
                     break;
                 }
-                prev_trans = prev_trans.from_prev(next.candidates());
+                prev_trans = prev_trans.from_prev(&next);
                 apriori_tid.push(next);
             }
         }
         let mut v = Vec::new();
         for a in apriori {
-            v.push(a.data_owned());
+            v.push(a);
         }
         for a in apriori_tid {
-            v.push(a.candidates_owned());
+            v.push(a);
         }
         v
-    }
-}
-
-pub struct BasicCandidates(pub CandidateType);
-impl From<Candidates> for BasicCandidates {
-    fn from(candidates: Candidates) -> Self {
-        Self(candidates.data_owned())
-    }
-}
-impl From<CandidateTid> for BasicCandidates {
-    fn from(value: CandidateTid) -> Self {
-        Self(value.candidates_owned())
     }
 }
 #[cfg(test)]

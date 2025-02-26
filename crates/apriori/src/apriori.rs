@@ -4,7 +4,7 @@ use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
 use crate::{
     array2d::Array2D,
-    candidate::{CandidateType, Candidates},
+    candidates::{CandidateType, Candidates},
     candidates_func::join,
     hash_tree::AprioriHashTree,
 };

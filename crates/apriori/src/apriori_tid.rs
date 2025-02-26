@@ -1,6 +1,6 @@
 use datasets::transaction_set::TransactionSet;
 
-use crate::{apriori::run_one, candidate::Candidates, candidates_tid::next, transaction_id::TransactionIDs};
+use crate::{apriori::run_one, candidates::Candidates, candidates_tid::next, transaction_id::TransactionIDs};
 
 pub struct AprioriTID {
     min_support: u64,
