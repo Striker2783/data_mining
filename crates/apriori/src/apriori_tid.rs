@@ -1,6 +1,11 @@
+use std::ops::Deref;
+
 use datasets::transaction_set::TransactionSet;
 
-use crate::{apriori::apriori_run_one, candidates::Candidates, candidates_tid::next, transaction_id::TransactionIDs};
+use crate::{
+    apriori::apriori_run_one, candidates::Candidates, candidates_tid::AprioriTiDCandidates,
+    transaction_id::TransactionIDs,
+};
 
 pub struct AprioriTID {
     min_support: u64,
@@ -15,7 +20,8 @@ impl AprioriTID {
         let mut prev_transactions = TransactionIDs::from(data);
         loop {
             let prev = v.last().unwrap();
-            let next = next(prev, &prev_transactions, self.min_support);
+            let next =
+                AprioriTiDCandidates::new(prev.deref()).next(&prev_transactions, self.min_support);
             if next.is_empty() {
                 break;
             }
