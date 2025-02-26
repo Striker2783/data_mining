@@ -1,11 +1,26 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, ops::DerefMut};
 
 use datasets::transaction_set::TransactionSet;
 
 use crate::{
-    CandidateType, apriori_hybrid::BasicCandidates, candidates::Candidates, candidates_func::join,
-    hash_tree::AprioriHashTree, transaction_id::TransactionIDs,
+    apriori_hybrid::BasicCandidates, candidate::{CandidateType, Candidates}, candidates_func::join, hash_tree::{AprioriHashTree, AprioriHashTree2}, transaction_id::TransactionIDs, candidates::Candidates as Candidates2
 };
+
+pub fn next(s: &CandidateType, data: &TransactionIDs, min_sup: u64) -> Candidates {
+    let mut tree = AprioriHashTree2::new();
+    join(&s.iter().collect::<Vec<_>>(), |join| {
+        tree.add(&join);
+    });
+    data.count(tree.deref_mut());
+    let mut new_candidates = Candidates::default();
+    tree.iter().for_each(|(v, n)| {
+        if n < min_sup {
+            return;
+        }
+        new_candidates.insert(v.to_vec());
+    });
+    new_candidates
+}
 
 #[derive(Debug)]
 pub struct CandidateTid {
@@ -34,7 +49,7 @@ impl CandidateTid {
         Self::next_i(&self.candidates, data, min_sup)
     }
     pub fn one(data: &TransactionSet, min_sup: u64) -> Self {
-        Self::from(BasicCandidates::from(Candidates::run_one(data, min_sup)))
+        Self::from(BasicCandidates::from(Candidates2::run_one(data, min_sup)))
     }
 
     pub fn candidates(&self) -> &CandidateType {

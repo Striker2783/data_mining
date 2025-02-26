@@ -1,4 +1,24 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::{hash::{DefaultHasher, Hash, Hasher}, ops::{Deref, DerefMut}};
+#[derive(Debug, Default)]
+pub struct AprioriHashTree2(AprioriHashTree<50>);
+
+impl AprioriHashTree2 {
+    pub fn new() -> Self {
+        Self(AprioriHashTree::<50>::new())
+    }
+}
+impl Deref for AprioriHashTree2 {
+    type Target = AprioriHashTree<50>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for AprioriHashTree2 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 /// A Hash Tree for the Apriori Algorithm
 /// Does not care about duplicates.
 #[derive(Debug, Default)]
