@@ -127,7 +127,7 @@ pub fn apriori_run_one_count(d: &TransactionSet) -> Vec<u64> {
     }
     first
 }
-pub fn apriori_run_two_count(d: &TransactionSet) -> HashMap<(usize, usize), u64> {
+pub fn apriori_run_two_count(d: &TransactionSet) -> Array2D<u64> {
     let mut second = Array2D::new(d.num_items);
     for d in d.iter() {
         for i in 0..d.len() {
@@ -136,11 +136,7 @@ pub fn apriori_run_two_count(d: &TransactionSet) -> HashMap<(usize, usize), u64>
             }
         }
     }
-    let mut v = HashMap::new();
-    for (r, c, count) in second.iter() {
-        v.insert((c, r), count);
-    }
-    v
+    second
 }
 pub fn apriori_run_two(d: &TransactionSet, min_sup: u64) -> Candidates {
     let mut second = Array2D::new(d.num_items);

@@ -69,7 +69,7 @@ mod tests {
 
     use datasets::transaction_set::TransactionSet;
 
-    use super::CountDistrubtion;
+    use crate::count_distribution::CountDistrubtion;
 
     #[test]
     fn test_overall() {

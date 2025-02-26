@@ -21,3 +21,8 @@ impl DerefMut for Candidates {
         &mut self.0
     }
 }
+impl From<CandidateType> for Candidates {
+    fn from(value: CandidateType) -> Self {
+        Self::new(value)
+    }
+}

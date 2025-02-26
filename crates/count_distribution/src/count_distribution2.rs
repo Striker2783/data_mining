@@ -1,18 +1,22 @@
-use std::{collections::HashMap, sync::Arc, thread};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    thread,
+};
 
-use apriori::candidates::CandidateType;
+use apriori::candidates::Candidates;
 use datasets::transaction_set::TransactionSet;
 
-use crate::proccess::CDProcess;
+use crate::process2::CDProcess;
 
-pub struct CountDistrubtion {
+pub struct CountDistribution {
     data: Arc<TransactionSet>,
     threads: usize,
-    candidates: Vec<Arc<CandidateType>>,
+    candidates: Vec<Arc<Candidates>>,
     min_sup: u64,
 }
 
-impl CountDistrubtion {
+impl CountDistribution {
     pub fn new(data: Arc<TransactionSet>, threads: usize, min_sup: u64) -> Self {
         Self {
             data,
@@ -22,10 +26,101 @@ impl CountDistrubtion {
         }
     }
 
-    pub fn run(mut self) -> Vec<Arc<CandidateType>> {
-        let mut partitions = self.partitions();
-        
-        todo!()
+    pub fn run(mut self) -> Vec<Arc<Candidates>> {
+        let partitions = self.partitions();
+        self.run_one(&partitions);
+        self.run_two(&partitions);
+        for n in 3.. {
+            let mut handles = Vec::new();
+            for p in &partitions {
+                let p = Arc::clone(p);
+                let candidates = Arc::clone(&self.candidates[n - 2]);
+                let handle = thread::spawn(move || {
+                    let cd = CDProcess::new(p, candidates);
+                    cd.run(n)
+                });
+                handles.push(handle);
+            }
+            let mut results = Vec::new();
+            for h in handles {
+                results.push(h.join().unwrap());
+            }
+            let mut map = HashMap::new();
+            for tree in results {
+                for (v, n) in tree.iter() {
+                    match map.get_mut(v) {
+                        Some(n2) => *n2 += n,
+                        None => {
+                            map.insert(v.to_vec(), n);
+                        }
+                    }
+                }
+            }
+            let mut set = Candidates::default();
+            for (k, v) in map {
+                if v > self.min_sup {
+                    set.insert(k);
+                }
+            }
+            if set.is_empty() {
+                break;
+            }
+            self.candidates.push(Arc::new(set));
+        }
+        self.candidates
+    }
+    fn run_two(&mut self, p: &[Arc<TransactionSet>]) {
+        let mut handles = Vec::new();
+        for i in 0..self.threads {
+            let p = Arc::clone(&p[i]);
+            let handle = thread::spawn(move || {
+                let cd = CDProcess::new(p, Arc::new(Candidates::default()));
+                cd.run_two()
+            });
+            handles.push(handle);
+        }
+        let mut results = Vec::new();
+        for h in handles {
+            results.push(h.join().unwrap());
+        }
+        let p = results.split_at_mut(1);
+        for i in 0..p.1.len() {
+            p.0[0].add_assign(&p.1[i]);
+        }
+        let mut map = Candidates::default();
+        for (r, c, v) in results[0].iter() {
+            if v > self.min_sup {
+                map.insert(vec![c, r]);
+            }
+        }
+        self.candidates.push(Arc::new(map));
+    }
+    fn run_one(&mut self, p: &[Arc<TransactionSet>]) {
+        let mut handles = Vec::new();
+        for i in 0..self.threads {
+            let p = Arc::clone(&p[i]);
+            let handle = thread::spawn(move || {
+                let cd = CDProcess::new(p, Arc::new(Candidates::default()));
+                cd.run_one()
+            });
+            handles.push(handle);
+        }
+        let mut results = Vec::new();
+        for h in handles {
+            results.push(h.join().unwrap());
+        }
+        for i in 1..results.len() {
+            for j in 0..results[i].len() {
+                results[0][j] += results[i][j];
+            }
+        }
+        let mut set = HashSet::new();
+        for i in 0..results[0].len() {
+            if results[0][i] >= self.min_sup {
+                set.insert(vec![i]);
+            }
+        }
+        self.candidates.push(Arc::new(set.into()));
     }
     fn partitions(&self) -> Vec<Arc<TransactionSet>> {
         let mut v = Vec::new();
@@ -51,7 +146,7 @@ mod tests {
 
     use datasets::transaction_set::TransactionSet;
 
-    use super::CountDistrubtion;
+    use crate::count_distribution2::CountDistribution;
 
     #[test]
     fn test_overall() {
@@ -69,7 +164,7 @@ mod tests {
             ],
             5,
         ));
-        let cd = CountDistrubtion::new(example, 8, 2);
+        let cd = CountDistribution::new(example, 8, 2);
         let cd = cd.run();
         assert!(cd[0].contains(&vec![0]));
         assert!(cd[0].contains(&vec![1]));
