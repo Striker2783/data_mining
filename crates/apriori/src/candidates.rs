@@ -8,9 +8,6 @@ impl Candidates {
     pub fn new(v: CandidateType) -> Self {
         Self(v)
     }
-    pub fn to_vec(self) -> CandidateType {
-        self.0
-    }
 }
 impl Deref for Candidates {
     type Target = CandidateType;
