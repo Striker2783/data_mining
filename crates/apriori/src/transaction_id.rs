@@ -81,10 +81,10 @@ impl TransactionID {
         });
         Self { v }
     }
-    pub fn start(data: &Vec<usize>) -> Self {
+    pub fn start(data: &[usize]) -> Self {
         Self::new(data.iter().cloned().map(|n| vec![n]).collect())
     }
-    pub fn from_transaction(data: &Vec<usize>, k: usize, set: &HashSet<Vec<usize>>) -> Self {
+    pub fn from_transaction(data: &[usize], k: usize, set: &HashSet<Vec<usize>>) -> Self {
         let mut output = HashSet::new();
         nested_loops(
             |a| {
@@ -92,7 +92,7 @@ impl TransactionID {
                     output.insert(a);
                 }
             },
-            &data,
+            data,
             k,
         );
         Self { v: output }
@@ -107,9 +107,8 @@ pub trait TransactionIdCounts {
 }
 impl TransactionIdCounts for HashMap<Vec<usize>, u64> {
     fn increment(&mut self, v: &[usize]) {
-        match self.get_mut(v) {
-            Some(a) => *a += 1,
-            None => (),
+        if let Some(a) = self.get_mut(v) {
+            *a += 1
         }
     }
 }
@@ -126,7 +125,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_transaction_id() {
-        let transaction = TransactionID::start(&vec![1, 2, 3, 5]);
+        let transaction = TransactionID::start(&[1, 2, 3, 5]);
         for n in [1, 2, 3, 5] {
             assert!(transaction.ids().contains(&vec![n]));
         }

@@ -23,7 +23,7 @@ impl AprioriHybrid {
             }
             if i < self.switch {
                 let prev = apriori.last().unwrap();
-                let next = next(&prev, &prev_trans, self.min_support);
+                let next = next(prev, &prev_trans, self.min_support);
                 if next.is_empty() {
                     break;
                 }

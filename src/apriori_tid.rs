@@ -17,7 +17,7 @@ impl AprioriTIDArgs {
         let t = TransactionSet::from_dat(File::open(&self.path)?);
         let candidates = AprioriTID::new(self.support_count).run(&t);
         for c in candidates {
-            print_candidate(c.candidates_owned().iter());
+            print_candidate(c.iter());
         }
         Ok(())
     }
