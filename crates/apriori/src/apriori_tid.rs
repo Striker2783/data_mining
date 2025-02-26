@@ -52,6 +52,14 @@ impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
         });
         new_candidates
     }
+    pub fn next_count(&self, data: &TransactionIDs) -> AprioriHashTree {
+        let mut tree = AprioriHashTree::new();
+        join(&self.0.iter().collect::<Vec<_>>(), |join| {
+            tree.add(&join);
+        });
+        data.count(tree.deref_mut());
+        tree
+    }
 }
 
 #[cfg(test)]
