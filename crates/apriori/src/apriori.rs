@@ -17,19 +17,6 @@ impl Apriori {
     pub fn new(min_support: u64) -> Self {
         Self { min_support }
     }
-    // pub fn run(self, data: &TransactionSet) -> Vec<Candidates> {
-    //     let mut v = Vec::new();
-    //     v.push(Candidates::run_one(data, self.min_support));
-    //     for i in 2.. {
-    //         let prev = v.last().unwrap();
-    //         let next = prev.next(data, i, self.min_support);
-    //         if next.data().is_empty() {
-    //             break;
-    //         }
-    //         v.push(next);
-    //     }
-    //     v
-    // }
     pub fn run(self, data: &TransactionSet) -> Vec<Candidates> {
         let mut v = Vec::new();
         v.push(run_one(data, self.min_support));
@@ -68,7 +55,7 @@ pub fn run(s: &CandidateType, data: &TransactionSet, i: usize, min_sup: u64) -> 
         tree.add(&v);
     });
     for idx in 0..data.transactions.len() {
-        nested_loops(|v| tree.increment(&v), &data.transactions[idx], i);
+        nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
     }
     let mut set = HashSet::new();
     for (arr, n) in tree.iter() {
