@@ -1,4 +1,24 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::{hash::{DefaultHasher, Hash, Hasher}, ops::{Deref, DerefMut}};
+#[derive(Debug, Default)]
+pub struct AprioriHashTree2(AprioriHashTree<50>);
+
+impl AprioriHashTree2 {
+    pub fn new() -> Self {
+        Self(AprioriHashTree::<50>::new())
+    }
+}
+impl Deref for AprioriHashTree2 {
+    type Target = AprioriHashTree<50>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for AprioriHashTree2 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 /// A Hash Tree for the Apriori Algorithm
 /// Does not care about duplicates.
 #[derive(Debug, Default)]
@@ -16,12 +36,12 @@ impl<const N: usize> AprioriHashTree<N> {
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
         let mut curr = &self.root.map[(hasher.finish() as usize) % N];
-        for i in 1..v.len() {
+        for &v in v.iter().skip(1) {
             if let Some(n) = curr {
                 match n.as_ref() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
-                        v[i].hash(&mut hasher);
+                        v.hash(&mut hasher);
                         curr = &hash_tree_internal_node.map[(hasher.finish() as usize) % N];
                     }
                     Node::Leaf(_) => return None,
@@ -33,7 +53,7 @@ impl<const N: usize> AprioriHashTree<N> {
         if let Some(n) = curr {
             match n.as_ref() {
                 Node::Internal(_) => return None,
-                Node::Leaf(hash_tree_leaf_node) => return Some(&hash_tree_leaf_node),
+                Node::Leaf(hash_tree_leaf_node) => return Some(hash_tree_leaf_node),
             }
         }
         None
@@ -43,12 +63,12 @@ impl<const N: usize> AprioriHashTree<N> {
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
         let mut curr = &mut self.root.map[(hasher.finish() as usize) % N];
-        for i in 1..v.len() {
+        for v in v.iter().skip(1) {
             if let Some(n) = curr {
                 match n.as_mut() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
-                        v[i].hash(&mut hasher);
+                        v.hash(&mut hasher);
                         curr = &mut hash_tree_internal_node.map[(hasher.finish() as usize) % N];
                     }
                     Node::Leaf(_) => return None,
@@ -80,7 +100,7 @@ impl<const N: usize> AprioriHashTree<N> {
         v[0].hash(&mut hasher);
         let hash = hasher.finish() as usize;
         let mut curr = &mut self.root.map[hash % N];
-        for i in 1..v.len() {
+        for v in v.iter().skip(1) {
             if curr.is_none() {
                 *curr = Some(Box::new(Node::Internal(HashTreeInternalNode::default())));
             }
@@ -88,7 +108,7 @@ impl<const N: usize> AprioriHashTree<N> {
                 match n.as_mut() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
-                        v[i].hash(&mut hasher);
+                        v.hash(&mut hasher);
                         curr = &mut hash_tree_internal_node.map[(hasher.finish() as usize) % N];
                     }
                     Node::Leaf(_) => return,
@@ -111,12 +131,12 @@ impl<const N: usize> AprioriHashTree<N> {
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
         let mut curr = &mut self.root.map[(hasher.finish() as usize) % N];
-        for i in 1..v.len() {
+        for v in v.iter().skip(1) {
             if let Some(n) = curr {
                 match n.as_mut() {
                     Node::Internal(hash_tree_internal_node) => {
                         let mut hasher = DefaultHasher::new();
-                        v[i].hash(&mut hasher);
+                        v.hash(&mut hasher);
                         curr = &mut hash_tree_internal_node.map[(hasher.finish() as usize) % N];
                     }
                     Node::Leaf(_) => return,

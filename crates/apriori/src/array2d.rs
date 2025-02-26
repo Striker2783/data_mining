@@ -14,8 +14,8 @@ impl<T> Array2D<T> {
     fn get_index(&self, row: usize, col: usize) -> usize {
         assert!(row != col);
         let (row, col) = if row > col { (row, col) } else { (col, row) };
-        let index = (row * (row - 1)) / 2 + col;
-        index
+        
+        (row * (row - 1)) / 2 + col
     }
     pub fn set(&mut self, row: usize, col: usize, value: T) {
         let index = self.get_index(row, col);
@@ -50,7 +50,7 @@ impl<'a, T> Array2DIterator<'a, T> {
         }
     }
 }
-impl<'a, T: Copy> Iterator for Array2DIterator<'a, T> {
+impl<T: Copy> Iterator for Array2DIterator<'_, T> {
     type Item = (usize, usize, T);
     fn next(&mut self) -> Option<Self::Item> {
         if self.idx >= self.data.0.len() {
