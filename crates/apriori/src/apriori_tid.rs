@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use datasets::transaction_set::TransactionSet;
 
 use crate::{
-    apriori::apriori_run_one, candidates::{CandidateType, Candidates}, candidates_func::join, hash_tree::AprioriHashTree2, transaction_id::TransactionIDs
+    apriori::apriori_run_one, candidates::{CandidateType, Candidates}, candidates_func::join, hash_tree::AprioriHashTree, transaction_id::TransactionIDs
 };
 
 pub struct AprioriTID {
@@ -38,7 +38,7 @@ impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
         Self(v)
     }
     pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
-        let mut tree = AprioriHashTree2::new();
+        let mut tree = AprioriHashTree::new();
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
             tree.add(&join);
         });

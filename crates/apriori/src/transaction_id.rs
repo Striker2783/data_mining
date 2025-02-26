@@ -1,8 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, ops::DerefMut};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{candidates_func::join, hash_tree::AprioriHashTree};
+use crate::{candidates_func::join, hash_tree::{AprioriHashTree, AprioriHashTreeGeneric}};
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
@@ -112,9 +112,14 @@ impl TransactionIdCounts for HashMap<Vec<usize>, u64> {
         }
     }
 }
-impl<const N: usize> TransactionIdCounts for AprioriHashTree<N> {
+impl<const N: usize> TransactionIdCounts for AprioriHashTreeGeneric<N> {
     fn increment(&mut self, v: &[usize]) {
         self.increment(v);
+    }
+}
+impl TransactionIdCounts for AprioriHashTree {
+    fn increment(&mut self, v: &[usize]) {
+        self.deref_mut().increment(v);
     }
 }
 

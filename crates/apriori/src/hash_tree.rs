@@ -1,20 +1,20 @@
 use std::{hash::{DefaultHasher, Hash, Hasher}, ops::{Deref, DerefMut}};
 #[derive(Debug, Default)]
-pub struct AprioriHashTree2(AprioriHashTree<50>);
+pub struct AprioriHashTree(AprioriHashTreeGeneric<50>);
 
-impl AprioriHashTree2 {
+impl AprioriHashTree {
     pub fn new() -> Self {
-        Self(AprioriHashTree::<50>::new())
+        Self(AprioriHashTreeGeneric::<50>::default())
     }
 }
-impl Deref for AprioriHashTree2 {
-    type Target = AprioriHashTree<50>;
+impl Deref for AprioriHashTree {
+    type Target = AprioriHashTreeGeneric<50>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-impl DerefMut for AprioriHashTree2 {
+impl DerefMut for AprioriHashTree {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
@@ -22,12 +22,12 @@ impl DerefMut for AprioriHashTree2 {
 /// A Hash Tree for the Apriori Algorithm
 /// Does not care about duplicates.
 #[derive(Debug, Default)]
-pub struct AprioriHashTree<const N: usize> {
+pub struct AprioriHashTreeGeneric<const N: usize> {
     root: HashTreeInternalNode<N>,
     length: usize,
 }
 
-impl<const N: usize> AprioriHashTree<N> {
+impl<const N: usize> AprioriHashTreeGeneric<N> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -233,7 +233,7 @@ impl HashTreeLeafNode {
     }
 }
 pub struct HashTreeIterator<'a, const N: usize> {
-    tree: &'a AprioriHashTree<N>,
+    tree: &'a AprioriHashTreeGeneric<N>,
     outer: usize,
     stack: Vec<(&'a Node<N>, usize)>,
 }
@@ -288,7 +288,7 @@ impl<'a, const N: usize> Iterator for HashTreeIterator<'a, N> {
 }
 
 impl<'a, const N: usize> HashTreeIterator<'a, N> {
-    fn new(tree: &'a AprioriHashTree<N>) -> Self {
+    fn new(tree: &'a AprioriHashTreeGeneric<N>) -> Self {
         Self {
             tree,
             stack: Vec::new(),
@@ -301,11 +301,13 @@ impl<'a, const N: usize> HashTreeIterator<'a, N> {
 mod tests {
     use std::collections::HashSet;
 
+    use crate::hash_tree::AprioriHashTreeGeneric;
+
     use super::AprioriHashTree;
 
     #[test]
     fn test_hash_tree() {
-        let mut tree = AprioriHashTree::<50>::default();
+        let mut tree = AprioriHashTree::default();
         tree.add(&[1, 2]);
         assert!(tree.contains(&[1, 2]));
         tree.increment(&[1, 2]);
@@ -317,7 +319,7 @@ mod tests {
     }
     #[test]
     fn test_hash_tree_iterator() {
-        let mut tree = AprioriHashTree::<2>::default();
+        let mut tree = AprioriHashTreeGeneric::<2>::default();
         tree.add(&[1, 2]);
         tree.increment(&[1, 2]);
         tree.add(&[1, 3]);

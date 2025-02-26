@@ -5,8 +5,8 @@ use crate::hash_tree::AprioriHashTree;
 pub fn join_tree<T: FnMut(&[usize]) -> bool>(
     v: &[&Vec<usize>],
     mut prune_fn: T,
-) -> AprioriHashTree<50> {
-    let mut tree = AprioriHashTree::<50>::default();
+) -> AprioriHashTree {
+    let mut tree = AprioriHashTree::default();
     join(v, |join| {
         if prune_fn(&join) {
             return;

@@ -70,7 +70,7 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
         if i == 2 {
             return apriori_run_two(data, min_sup);
         }
-        let mut tree = AprioriHashTree::<50>::new();
+        let mut tree = AprioriHashTree::new();
         join(&self.iter().collect::<Vec<_>>(), |v| {
             if self.can_be_pruned(&v) {
                 return;
