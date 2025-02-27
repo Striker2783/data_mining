@@ -79,7 +79,8 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
             if t.len() < i {
                 continue;
             }
-            if tree.len() > 100_000 {
+            let factorial = (2..=(t.len() - i)).fold(1usize, |acc,x| acc.saturating_mul(x));
+            if tree.len() > factorial / 3 {
                 nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
             } else {
                 let t: HashSet<_> = t.iter().cloned().collect();
