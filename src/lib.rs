@@ -9,7 +9,7 @@ use apriori::AprioriArgs;
 use apriori_hybrid::AprioriHybridArgs;
 use apriori_tid::AprioriTIDArgs;
 use clap::Subcommand;
-use count_distribution::{CountDistributionArgs, CountDistributionArgs2};
+use count_distribution::CountDistributionArgs;
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -17,7 +17,6 @@ pub enum Commands {
     AprioriTID(AprioriTIDArgs),
     AprioriHybrid(AprioriHybridArgs),
     CountDistribution(CountDistributionArgs),
-    CountDistribution2(CountDistributionArgs2),
 }
 impl Commands {
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
@@ -27,9 +26,6 @@ impl Commands {
             Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run()?,
             Commands::CountDistribution(count_distribution_args) => {
                 count_distribution_args.run()?
-            }
-            Commands::CountDistribution2(count_distribution_args2) => {
-                count_distribution_args2.run()?
             }
         };
         Ok(())
