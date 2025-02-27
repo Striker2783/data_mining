@@ -79,8 +79,12 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
             if t.len() < i {
                 continue;
             }
-            let factorial = (2..=(t.len() - i)).fold(1usize, |acc,x| acc.saturating_mul(x));
-            if tree.len() > factorial / 3 {
+            let mut combinations = ((t.len() - i + 1).max(i + 1)..=t.len())
+                .fold(1usize, |acc, x| acc.saturating_mul(x));
+            if combinations != usize::MAX {
+                combinations /= (2..(t.len() - i + 1).min(i + 1)).product::<usize>();
+            }
+            if tree.len() > combinations {
                 nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
             } else {
                 let t: HashSet<_> = t.iter().cloned().collect();
