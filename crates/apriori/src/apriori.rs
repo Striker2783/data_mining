@@ -97,6 +97,11 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
         tree
     }
     pub fn run(&self, data: &TransactionSet, i: usize, min_sup: u64) -> Candidates {
+        if i == 1 {
+            return apriori_run_one(data, min_sup);
+        } else if i == 2 {
+            return apriori_run_two(data, min_sup);
+        }
         let tree = self.run_count(data, i);
         let mut set = Candidates::default();
         for (arr, n) in tree.iter() {
