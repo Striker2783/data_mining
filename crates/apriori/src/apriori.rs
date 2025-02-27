@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::HashSet,
     ops::{Deref, DerefMut},
 };
 
@@ -75,25 +75,29 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
             tree.add(&v);
         });
         for idx in 0..data.transactions.len() {
-            nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
+            let t = &data.transactions[idx];
+            if t.len() < i {
+                continue;
+            }
+            if tree.len() > 100_000 {
+                nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
+            } else {
+                let t: HashSet<_> = t.iter().cloned().collect();
+                let mut add = Vec::new();
+                for (k, _) in tree.iter() {
+                    if k.iter().all(|a| t.contains(a)) {
+                        add.push(k.to_vec());
+                    }
+                }
+                for k in add {
+                    tree.increment(&k);
+                }
+            }
         }
         tree
     }
     pub fn run(&self, data: &TransactionSet, i: usize, min_sup: u64) -> Candidates {
-        assert!(i >= 2);
-        if i == 2 {
-            return apriori_run_two(data, min_sup);
-        }
-        let mut tree = AprioriHashTree::new();
-        join(&self.iter().collect::<Vec<_>>(), |v| {
-            if self.can_be_pruned(&v) {
-                return;
-            }
-            tree.add(&v);
-        });
-        for idx in 0..data.transactions.len() {
-            nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
-        }
+        let tree = self.run_count(data, i);
         let mut set = Candidates::default();
         for (arr, n) in tree.iter() {
             if n >= min_sup {
