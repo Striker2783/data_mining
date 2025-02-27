@@ -1,8 +1,14 @@
-use std::{collections::{HashMap, HashSet}, ops::DerefMut};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::DerefMut,
+};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{candidates_func::join, hash_tree::{AprioriHashTree, AprioriHashTreeGeneric}};
+use crate::{
+    candidates_func::join,
+    hash_tree::{AprioriHashTree, AprioriHashTreeGeneric},
+};
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
@@ -85,17 +91,31 @@ impl TransactionID {
         Self::new(data.iter().cloned().map(|n| vec![n]).collect())
     }
     pub fn from_transaction(data: &[usize], k: usize, set: &HashSet<Vec<usize>>) -> Self {
-        let mut output = HashSet::new();
-        nested_loops(
-            |a| {
-                if set.contains(a) {
-                    output.insert(a.to_vec());
+        if data.len() < k {
+            return Self::default();
+        }
+        if set.len() < 400 {
+            let setdata: HashSet<_> = data.iter().cloned().collect();
+            let mut output = HashSet::new();
+            for s in set {
+                if s.iter().all(|n| setdata.contains(n)) {
+                    output.insert(s.to_vec());
                 }
-            },
-            data,
-            k,
-        );
-        Self { v: output }
+            }
+            Self { v: output }
+        } else {
+            let mut output = HashSet::new();
+            nested_loops(
+                |a| {
+                    if set.contains(a) {
+                        output.insert(a.to_vec());
+                    }
+                },
+                data,
+                k,
+            );
+            Self { v: output }
+        }
     }
     pub fn ids(&self) -> &HashSet<Vec<usize>> {
         &self.v
