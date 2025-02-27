@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 #[derive(Debug, Default)]
 pub struct Array2D<T>(Vec<T>);
 impl<T: Copy> Array2D<T> {
@@ -29,6 +31,12 @@ impl Array2D<u64> {
     pub fn increment(&mut self, row: usize, col: usize) {
         let index = self.get_index(row, col);
         self.0[index] += 1;
+    }
+    pub fn add_assign(&mut self, rhs: &Array2D<u64>) {
+        assert!(self.0.len() == rhs.0.len());
+        for i in 0..self.0.len() {
+            self.0[i] += rhs.0[i];
+        }
     }
 }
 

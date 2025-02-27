@@ -1,10 +1,23 @@
-use std::{fs::File, io::{BufRead, BufReader}};
+use std::{fs::File, io::{BufRead, BufReader}, ops::{Deref, DerefMut}};
 
 /// A 0-indexed item set
 #[derive(Debug, Default)]
 pub struct TransactionSet {
     pub transactions: Vec<Vec<usize>>,
     pub num_items: usize
+}
+
+impl Deref for TransactionSet {
+    type Target = Vec<Vec<usize>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.transactions
+    }
+}
+impl DerefMut for TransactionSet {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.transactions
+    }
 }
 
 impl TransactionSet {

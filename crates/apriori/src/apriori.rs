@@ -1,4 +1,7 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    collections::HashSet,
+    ops::{Deref, DerefMut},
+};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
@@ -19,10 +22,7 @@ impl Apriori {
     }
     pub fn run(self, data: &TransactionSet) -> Vec<Candidates> {
         let mut v = Vec::new();
-        v.push(apriori_run_one(
-            data,
-            self.min_support,
-        ));
+        v.push(apriori_run_one(data, self.min_support));
         for i in 2.. {
             let prev = v.last().unwrap();
             let next = AprioriCandidates::new(prev.deref()).run(data, i, self.min_support);
@@ -65,11 +65,8 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
         }
         false
     }
-    pub fn run(&self, data: &TransactionSet, i: usize, min_sup: u64) -> Candidates {
-        assert!(i >= 2);
-        if i == 2 {
-            return apriori_run_two(data, min_sup);
-        }
+    pub fn run_count(&self, data: &TransactionSet, i: usize) -> AprioriHashTree {
+        assert!(i > 2);
         let mut tree = AprioriHashTree::new();
         join(&self.iter().collect::<Vec<_>>(), |v| {
             if self.can_be_pruned(&v) {
@@ -78,8 +75,34 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
             tree.add(&v);
         });
         for idx in 0..data.transactions.len() {
-            nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
+            let t = &data.transactions[idx];
+            if t.len() < i {
+                continue;
+            }
+            if tree.len() > 100_000 {
+                nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
+            } else {
+                let t: HashSet<_> = t.iter().cloned().collect();
+                let mut add = Vec::new();
+                for (k, _) in tree.iter() {
+                    if k.iter().all(|a| t.contains(a)) {
+                        add.push(k.to_vec());
+                    }
+                }
+                for k in add {
+                    tree.increment(&k);
+                }
+            }
         }
+        tree
+    }
+    pub fn run(&self, data: &TransactionSet, i: usize, min_sup: u64) -> Candidates {
+        if i == 1 {
+            return apriori_run_one(data, min_sup);
+        } else if i == 2 {
+            return apriori_run_two(data, min_sup);
+        }
+        let tree = self.run_count(data, i);
         let mut set = Candidates::default();
         for (arr, n) in tree.iter() {
             if n >= min_sup {
@@ -103,6 +126,26 @@ pub fn apriori_run_one(d: &TransactionSet, min_sup: u64) -> Candidates {
         }
     }
     v
+}
+pub fn apriori_run_one_count(d: &TransactionSet) -> Vec<u64> {
+    let mut first = vec![0u64; d.num_items];
+    for d in d.iter() {
+        for &item in d {
+            first[item] += 1;
+        }
+    }
+    first
+}
+pub fn apriori_run_two_count(d: &TransactionSet) -> Array2D<u64> {
+    let mut second = Array2D::new(d.num_items);
+    for d in d.iter() {
+        for i in 0..d.len() {
+            for j in 0..i {
+                second.increment(d[i], d[j]);
+            }
+        }
+    }
+    second
 }
 pub fn apriori_run_two(d: &TransactionSet, min_sup: u64) -> Candidates {
     let mut second = Array2D::new(d.num_items);
