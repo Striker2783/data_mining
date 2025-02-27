@@ -1,5 +1,3 @@
-use std::ops::AddAssign;
-
 #[derive(Debug, Default)]
 pub struct Array2D<T>(Vec<T>);
 impl<T: Copy> Array2D<T> {

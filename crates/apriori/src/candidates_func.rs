@@ -1,21 +1,5 @@
 use std::collections::HashMap;
 
-use crate::hash_tree::AprioriHashTree;
-
-pub fn join_tree<T: FnMut(&[usize]) -> bool>(
-    v: &[&Vec<usize>],
-    mut prune_fn: T,
-) -> AprioriHashTree {
-    let mut tree = AprioriHashTree::default();
-    join(v, |join| {
-        if prune_fn(&join) {
-            return;
-        }
-        tree.add(&join);
-    });
-    tree
-}
-
 pub fn join<T: FnMut(Vec<usize>)>(v: &[&Vec<usize>], mut f: T) {
     let mut map = HashMap::new();
     for c in v.iter() {

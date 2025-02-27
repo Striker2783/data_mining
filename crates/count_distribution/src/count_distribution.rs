@@ -171,7 +171,6 @@ mod tests {
         assert!(cd[0].contains(&vec![2]));
         assert!(cd[0].contains(&vec![3]));
         assert!(cd[0].contains(&vec![4]));
-        println!("{:?}", cd[1]);
         assert_eq!(cd[0].len(), 5);
         assert_eq!(cd[1].len(), 6);
         assert_eq!(cd[2].len(), 2);
