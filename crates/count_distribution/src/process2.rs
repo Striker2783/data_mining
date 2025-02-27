@@ -1,6 +1,6 @@
 use std::{ops::Deref, sync::Arc};
 
-use apriori::{apriori::{apriori_run_one_count, apriori_run_two_count, AprioriCandidates}, array2d::Array2D, candidates::{CandidateType, Candidates}};
+use apriori::{apriori::{apriori_run_one_count, apriori_run_two_count, AprioriCandidates}, array2d::Array2D, candidates::Candidates};
 use datasets::transaction_set::TransactionSet;
 
 pub struct CDProcess {
