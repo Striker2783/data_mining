@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+#[derive(Debug)]
 pub struct AprioriTrie {
     root: Node,
     size: usize,
@@ -33,6 +33,12 @@ impl AprioriTrie {
         }
     }
 
+    pub fn join(&mut self, i: usize, sup: u64) {
+        assert!(i > 0);
+        let c = self.root.join(i - 1, sup);
+        self.size += c;
+    }
+
     pub fn insert(&mut self, v: &[usize], n: u64) {
         match self.root.get_mut(v) {
             Some(a) => *a = n,
@@ -47,7 +53,7 @@ impl AprioriTrie {
         self.root.transaction_update(v, depth, 0)
     }
 }
-
+#[derive(Debug)]
 struct Node {
     count: u64,
     map: HashMap<usize, Node>,
@@ -73,6 +79,37 @@ impl Node {
                 None => (),
             }
         }
+    }
+    pub fn join(&mut self, i: usize, sup: u64) -> usize {
+        if i == 0 {
+            let mut v = Vec::new();
+            for (&n, node) in &mut self.map {
+                if node.count >= sup {
+                    v.push(n);
+                }
+            }
+            let mut count = 0;
+            for i in 0..v.len() {
+                for j in (i + 1)..v.len() {
+                    let n1 = v[i];
+                    let n2 = v[j];
+                    let max = n1.max(n2);
+                    let min = n1.min(n2);
+                    if self.add(&[min, max]) {
+                        count += 1;
+                    };
+                }
+            }
+            return count;
+        }
+        let mut total = 0;
+        for node in self.map.values_mut() {
+            if node.count < sup {
+                continue;
+            }
+            total += node.join(i - 1, sup);
+        }
+        total
     }
     fn add(&mut self, v: &[usize]) -> bool {
         if v.is_empty() {
@@ -141,5 +178,11 @@ mod tests {
         trie.transaction_update(&[1, 2, 3], 2);
         assert_eq!(trie.get(&[1, 2]), Some(1));
         assert_eq!(trie.size(), 5);
+        trie.join(1, 5);
+        assert!(trie.contains(&[1, 4]));
+        assert!(trie.contains(&[2, 4]));
+        assert_eq!(trie.size(), 7);
+        trie.transaction_update(&[2, 3, 4], 2);
+        assert_eq!(trie.get(&[2, 4]), Some(1));
     }
 }
