@@ -29,6 +29,10 @@ impl AprioriT {
             }
         }
     }
+    
+    pub fn trie(self) -> AprioriTrie {
+        self.trie
+    }
 }
 
 #[cfg(test)]
