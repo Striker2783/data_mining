@@ -62,19 +62,21 @@ impl AprioriTrie {
 struct Node {
     count: u64,
     map: HashMap<usize, Node>,
+    done: bool,
 }
 impl Node {
     fn new() -> Self {
         Node {
             count: 0,
             map: HashMap::new(),
+            done: false,
         }
     }
     fn transaction_update(&mut self, v: &[usize], depth: usize, curr_i: usize) {
         if depth <= curr_i {
             self.count = self.count.saturating_add(1);
             return;
-        } else if v.is_empty() || v.len() < depth - curr_i - 1 {
+        } else if v.is_empty() || v.len() < depth - curr_i - 1 || self.done {
             return;
         }
         for i in 0..(v.len() - (depth - curr_i - 1)) {
@@ -117,6 +119,8 @@ impl Node {
                 }
             }
             return count;
+        } else if self.done {
+            return 0;
         }
         let mut total = 0;
         for node in self.map.values_mut() {
@@ -124,6 +128,9 @@ impl Node {
                 continue;
             }
             total += node.join(i - 1, sup);
+        }
+        if total == 0 {
+            self.done = true;
         }
         total
     }
