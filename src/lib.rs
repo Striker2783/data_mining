@@ -1,6 +1,7 @@
 mod apriori;
 mod apriori_hybrid;
 mod apriori_tid;
+mod apriori_trie;
 mod count_distribution;
 
 use std::error::Error;
@@ -8,6 +9,7 @@ use std::error::Error;
 use apriori::AprioriArgs;
 use apriori_hybrid::AprioriHybridArgs;
 use apriori_tid::AprioriTIDArgs;
+use apriori_trie::AprioriTrieArgs;
 use clap::Subcommand;
 use count_distribution::CountDistributionArgs;
 
@@ -17,6 +19,7 @@ pub enum Commands {
     AprioriTID(AprioriTIDArgs),
     AprioriHybrid(AprioriHybridArgs),
     CountDistribution(CountDistributionArgs),
+    AprioriTrie(AprioriTrieArgs),
 }
 impl Commands {
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
@@ -27,6 +30,7 @@ impl Commands {
             Commands::CountDistribution(count_distribution_args) => {
                 count_distribution_args.run()?
             }
+            Commands::AprioriTrie(apriori_trie_args) => apriori_trie_args.run()?,
         };
         Ok(())
     }
