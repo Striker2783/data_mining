@@ -57,6 +57,11 @@ impl AprioriTrie {
         let mut v = Vec::new();
         self.root.for_each(&mut v, sup, &mut f)
     }
+
+    pub fn cleaup(&mut self, sup: u64) {
+        let c = self.root.cleaup(sup);
+        self.size -= c;
+    }
 }
 #[derive(Debug)]
 struct Node {
@@ -71,6 +76,21 @@ impl Node {
             map: HashMap::new(),
             done: false,
         }
+    }
+    fn cleaup(&mut self, sup: u64) -> usize {
+        let mut to_remove = Vec::new();
+        let mut removed = 0;
+        for (&n, node) in self.map.iter_mut() {
+            if node.count < sup {
+                to_remove.push(n);
+                continue;
+            }
+            removed += node.cleaup(sup);
+        }
+        for n in to_remove {
+            self.map.remove(&n);
+        }
+        removed
     }
     fn transaction_update(&mut self, v: &[usize], depth: usize, curr_i: usize) {
         if depth <= curr_i {

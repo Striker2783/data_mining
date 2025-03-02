@@ -20,6 +20,7 @@ impl AprioriT {
         }
         for i in 2.. {
             let prev = self.trie.size();
+            self.trie.cleaup(self.min_sup);
             self.trie.join(i, self.min_sup);
             if self.trie.size() <= prev {
                 break;
