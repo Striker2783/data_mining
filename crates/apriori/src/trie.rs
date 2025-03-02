@@ -34,8 +34,8 @@ impl AprioriTrie {
     }
 
     pub fn join(&mut self, i: usize, sup: u64) {
-        assert!(i > 0);
-        let c = self.root.join(i - 1, sup);
+        assert!(i >= 2);
+        let c = self.root.join(i - 2, sup);
         self.size += c;
     }
 
@@ -52,6 +52,11 @@ impl AprioriTrie {
     pub fn transaction_update(&mut self, v: &[usize], depth: usize) {
         self.root.transaction_update(v, depth, 0)
     }
+
+    pub fn for_each(&self, sup: u64, mut f: impl FnMut(&[usize])) {
+        let mut v = Vec::new();
+        self.root.for_each(&mut v, sup, &mut f)
+    }
 }
 #[derive(Debug)]
 struct Node {
@@ -66,10 +71,10 @@ impl Node {
         }
     }
     fn transaction_update(&mut self, v: &[usize], depth: usize, curr_i: usize) {
-        if depth == curr_i {
+        if depth <= curr_i {
             self.count = self.count.saturating_add(1);
             return;
-        } else if v.is_empty() {
+        } else if v.is_empty() || v.len() < depth - curr_i - 1 {
             return;
         }
         for i in 0..(v.len() - (depth - curr_i - 1)) {
@@ -80,7 +85,18 @@ impl Node {
             }
         }
     }
-    pub fn join(&mut self, i: usize, sup: u64) -> usize {
+    fn for_each(&self, v: &mut Vec<usize>, sup: u64, f: &mut impl FnMut(&[usize])) {
+        for (&n, node) in self.map.iter() {
+            if node.count < sup {
+                continue;
+            }
+            v.push(n);
+            f(&v);
+            node.for_each(v, sup, f);
+            v.pop();
+        }
+    }
+    fn join(&mut self, i: usize, sup: u64) -> usize {
         if i == 0 {
             let mut v = Vec::new();
             for (&n, node) in &mut self.map {
@@ -149,6 +165,8 @@ impl Node {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::AprioriTrie;
 
     #[test]
@@ -178,11 +196,19 @@ mod tests {
         trie.transaction_update(&[1, 2, 3], 2);
         assert_eq!(trie.get(&[1, 2]), Some(1));
         assert_eq!(trie.size(), 5);
-        trie.join(1, 5);
+        trie.join(2, 5);
         assert!(trie.contains(&[1, 4]));
         assert!(trie.contains(&[2, 4]));
         assert_eq!(trie.size(), 7);
         trie.transaction_update(&[2, 3, 4], 2);
         assert_eq!(trie.get(&[2, 4]), Some(1));
+        let mut set = HashSet::new();
+        trie.for_each(5, |v| {
+            set.insert(v.to_vec());
+        });
+        assert!(set.contains(&vec![1]));
+        assert!(set.contains(&vec![2]));
+        assert!(set.contains(&vec![4]));
+        assert!(set.len() == 3);
     }
 }
