@@ -1,4 +1,7 @@
-use std::{hash::{DefaultHasher, Hash, Hasher}, ops::{Deref, DerefMut}};
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    ops::{Deref, DerefMut},
+};
 #[derive(Debug, Default)]
 pub struct AprioriHashTree(AprioriHashTreeGeneric<50>);
 
@@ -168,6 +171,9 @@ impl<const N: usize> AprioriHashTreeGeneric<N> {
             None
         }
     }
+    pub fn for_each_mut(&mut self, mut f: impl FnMut(&[usize], &mut u64)) {
+        self.root.for_each_mut(&mut f);
+    }
     pub fn iter(&self) -> HashTreeIterator<N> {
         HashTreeIterator::new(self)
     }
@@ -190,6 +196,22 @@ struct HashTreeInternalNode<const N: usize> {
     map: [Option<Box<Node<N>>>; N],
 }
 
+impl<const N: usize> HashTreeInternalNode<N> {
+    fn for_each_mut(&mut self, f: &mut impl FnMut(&[usize], &mut u64)) {
+        for n in &mut self.map {
+            match n {
+                Some(n) => match &mut **n {
+                    Node::Internal(hash_tree_internal_node) => {
+                        hash_tree_internal_node.for_each_mut(f)
+                    }
+                    Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.for_each_mut(f),
+                },
+                None => (),
+            }
+        }
+    }
+}
+
 impl<const N: usize> Default for HashTreeInternalNode<N> {
     fn default() -> Self {
         Self {
@@ -210,6 +232,11 @@ impl HashTreeLeafNode {
     }
     fn find(&self, v: &[usize]) -> Option<&(Vec<usize>, u64)> {
         self.0.iter().find(|v2| v2.0.eq(v))
+    }
+    fn for_each_mut(&mut self, f: &mut impl FnMut(&[usize], &mut u64)) {
+        for (v, n) in &mut self.0 {
+            f(v, n);
+        }
     }
     fn find_mut(&mut self, v: &[usize]) -> Option<&mut (Vec<usize>, u64)> {
         self.0.iter_mut().find(|v2| v2.0.eq(v))

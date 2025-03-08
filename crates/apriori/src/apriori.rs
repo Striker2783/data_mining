@@ -87,16 +87,11 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
             if tree.len() > combinations {
                 nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
             } else {
-                let t: HashSet<_> = t.iter().cloned().collect();
-                let mut add = Vec::new();
-                for (k, _) in tree.iter() {
-                    if k.iter().all(|a| t.contains(a)) {
-                        add.push(k.to_vec());
+                tree.for_each_mut(|v, n| {
+                    if v.iter().all(|a| t.contains(a)) {
+                        *n += 1;
                     }
-                }
-                for k in add {
-                    tree.increment(&k);
-                }
+                });
             }
         }
         tree
