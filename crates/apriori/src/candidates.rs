@@ -1,6 +1,7 @@
-use std::{collections::HashSet, ops::{Deref, DerefMut}};
+use std::{collections::{HashMap, HashSet}, ops::{Deref, DerefMut}};
 
 pub type CandidateType = HashSet<Vec<usize>>;
+pub type CandidateCounter = HashMap<Vec<usize>, u64>;
 
 #[derive(Debug, Default, Clone)]
 pub struct Candidates(CandidateType);

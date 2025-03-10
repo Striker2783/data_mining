@@ -78,7 +78,7 @@ mod tests {
             ],
             5,
         );
-        let apriori = AprioriHybrid::new(2, 2);
+        let apriori = AprioriHybrid::new(2, 3);
         let result = apriori.run(&example);
         assert_eq!(result.len(), 3);
         assert_eq!(result[0].len(), 5);
