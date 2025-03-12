@@ -14,6 +14,14 @@ impl TransactionIDs {
     pub fn new(v: Vec<TransactionID>) -> Self {
         Self { v }
     }
+    pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
+        let mut o = Self::default();
+        for d in &self.v {
+            let a = d.count_with_next(set);
+            o.v.push(a);
+        }
+        o
+    }
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
         for d in &self.v {
             d.count(set);

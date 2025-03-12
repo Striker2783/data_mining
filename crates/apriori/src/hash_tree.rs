@@ -203,14 +203,10 @@ struct HashTreeInternalNode<const N: usize> {
 impl<const N: usize> HashTreeInternalNode<N> {
     fn for_each_mut(&mut self, f: &mut impl FnMut(&[usize], &mut u64)) {
         for n in &mut self.map {
-            match n {
-                Some(n) => match &mut **n {
-                    Node::Internal(hash_tree_internal_node) => {
-                        hash_tree_internal_node.for_each_mut(f)
-                    }
-                    Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.for_each_mut(f),
-                },
-                None => (),
+            let Some(n) = n else { continue };
+            match &mut **n {
+                Node::Internal(hash_tree_internal_node) => hash_tree_internal_node.for_each_mut(f),
+                Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.for_each_mut(f),
             }
         }
     }
