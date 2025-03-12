@@ -5,6 +5,12 @@ pub struct AprioriTrie {
     size: usize,
 }
 
+impl Default for AprioriTrie {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AprioriTrie {
     pub fn new() -> Self {
         let mut n = Node::new();
@@ -101,10 +107,7 @@ impl Node {
         }
         for i in 0..(v.len() - (depth - curr_i - 1)) {
             let n = v[i];
-            match self.map.get_mut(&n) {
-                Some(a) => a.transaction_update(&v[(i + 1)..], depth, curr_i + 1),
-                None => (),
-            }
+            if let Some(a) = self.map.get_mut(&n) { a.transaction_update(&v[(i + 1)..], depth, curr_i + 1) }
         }
     }
     fn for_each(&self, v: &mut Vec<usize>, sup: u64, f: &mut impl FnMut(&[usize])) {
@@ -113,7 +116,7 @@ impl Node {
                 continue;
             }
             v.push(n);
-            f(&v);
+            f(v);
             node.for_each(v, sup, f);
             v.pop();
         }
@@ -164,7 +167,7 @@ impl Node {
                 let mut n = Self::new();
                 n.add(&v[1..]);
                 self.map.insert(v[0], n);
-                return true;
+                true
             }
         }
     }
@@ -173,9 +176,9 @@ impl Node {
             return Some(self.count);
         }
         if let Some(k) = self.map.get(&v[0]) {
-            return k.get(&v[1..]);
+            k.get(&v[1..])
         } else {
-            return None;
+            None
         }
     }
     fn get_mut(&mut self, v: &[usize]) -> Option<&mut u64> {
@@ -183,9 +186,9 @@ impl Node {
             return Some(&mut self.count);
         }
         if let Some(k) = self.map.get_mut(&v[0]) {
-            return k.get_mut(&v[1..]);
+            k.get_mut(&v[1..])
         } else {
-            return None;
+            None
         }
     }
 }

@@ -11,7 +11,7 @@ fn nested_loops_helper<T: FnMut(&[usize])>(
     stack: &mut [usize],
 ) {
     if i == k {
-        f(&stack);
+        f(stack);
         return;
     }
     for j in start..data.len() {
@@ -39,7 +39,7 @@ fn nested_loops_prune_helper<T: FnMut(&[usize]), U: Fn(&[usize]) -> bool>(
     stack: &mut [usize],
 ) {
     if i == k {
-        f(&stack);
+        f(stack);
         return;
     }
     if p(&stack[..i]) {

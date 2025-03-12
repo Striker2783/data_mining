@@ -31,7 +31,8 @@ impl<'a> CountDistributionHybrid<'a> {
         let sets = self.partitions();
         for n in 1.. {
             let mut handlers = Vec::new();
-            for p in sets.iter().cloned() {
+            for p in sets.iter() {
+                let p = Arc::clone(p);
                 let c = if n == 1 {
                     Arc::new(Candidates::default())
                 } else {

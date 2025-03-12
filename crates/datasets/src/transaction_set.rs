@@ -35,8 +35,8 @@ impl TransactionSet {
                 continue;
             }
             let line = l.unwrap();
-            let items: Vec<usize> = line.trim().split_whitespace().map(|s| s.parse::<usize>().unwrap()).collect();
-            max = items.iter().max().unwrap().clone().max(max);
+            let items: Vec<usize> = line.split_whitespace().map(|s| s.parse::<usize>().unwrap()).collect();
+            max = (*items.iter().max().unwrap()).max(max);
             transactions.push(items);
         }
         Self { transactions, num_items: max + 1 }

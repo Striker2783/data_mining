@@ -43,12 +43,10 @@ impl CDProcessHybrid {
         }
         if self.switch >= n {
             let c = AprioriTiDCandidates::new(c.deref()).next_count(&self.tid);
-            let map = c.iter().map(|(v, n)| (v.to_vec(), n)).collect();
-            return map;
+            c.iter().map(|(v, n)| (v.to_vec(), n)).collect()
         } else {
             let c = AprioriCandidates::new(c.deref()).run_count(&self.set, n);
-            let map = c.iter().map(|(v, n)| (v.to_vec(), n)).collect();
-            return map;
+            c.iter().map(|(v, n)| (v.to_vec(), n)).collect()
         }
     }
 }
