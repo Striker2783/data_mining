@@ -2,9 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::
-    candidates_func::join
-;
+use crate::candidates_func::join;
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
@@ -78,13 +76,34 @@ impl TransactionID {
     }
 
     pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
-        let mut o = TransactionID::default();
-        join(&self.v.iter().collect::<Vec<_>>(), |curr| {
-            if set.increment(&curr) {
-                o.v.insert(curr);
+        if set.len() < self.ids().len() {
+            let mut t = TransactionID::default();
+            set.for_each(|v| {
+                let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
+                if !self.ids().contains(&arr) {
+                    return;
+                }
+                for i in 0..arr.len() {
+                    arr[i] = v[i];
+                    if !self.ids().contains(&arr) {
+                        return;
+                    }
+                }
+                t.ids_mut().insert(v.to_vec());
+            });
+            for v in t.ids() {
+                set.increment(v);
             }
-        });
-        o
+            t
+        } else {
+            let mut o = TransactionID::default();
+            join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+                if set.increment(&curr) {
+                    o.v.insert(curr);
+                }
+            });
+            o
+        }
     }
 
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
@@ -134,10 +153,18 @@ impl TransactionID {
     pub fn ids(&self) -> &HashSet<Vec<usize>> {
         &self.v
     }
+    pub fn ids_mut(&mut self) -> &mut HashSet<Vec<usize>> {
+        &mut self.v
+    }
 }
 
 pub trait TransactionIdCounts {
     fn increment(&mut self, v: &[usize]) -> bool;
+    fn len(&self) -> usize;
+    fn for_each(&self, f: impl FnMut(&[usize]));
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 impl TransactionIdCounts for HashMap<Vec<usize>, u64> {
     fn increment(&mut self, v: &[usize]) -> bool {
@@ -147,6 +174,14 @@ impl TransactionIdCounts for HashMap<Vec<usize>, u64> {
         } else {
             false
         }
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn for_each(&self, mut f: impl FnMut(&[usize])) {
+        self.iter().for_each(|v| f(v.0));
     }
 }
 

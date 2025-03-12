@@ -330,6 +330,16 @@ impl<const N: usize> TransactionIdCounts for AprioriHashTreeGeneric<N> {
     fn increment(&mut self, v: &[usize]) -> bool {
         self.increment(v)
     }
+    
+    fn len(&self) -> usize {
+        self.len()
+    }
+    
+    fn for_each(&self, mut f: impl FnMut(&[usize])) {
+        self.iter().for_each(|v| {
+            f(v.0)
+        });
+    }
 }
 
 #[cfg(test)]
