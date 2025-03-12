@@ -3,7 +3,11 @@ use std::ops::{Deref, DerefMut};
 use datasets::transaction_set::TransactionSet;
 
 use crate::{
-    apriori::apriori_run_one, candidates::{CandidateType, Candidates}, candidates_func::join, hash_tree::AprioriHashTree, transaction_id::TransactionIDs
+    apriori::apriori_run_one,
+    candidates::{CandidateType, Candidates},
+    candidates_func::join,
+    hash_tree::AprioriHashTree,
+    transaction_id::TransactionIDs,
 };
 
 pub struct AprioriTID {
@@ -29,6 +33,21 @@ impl AprioriTID {
         }
         v
     }
+    pub fn run_obsolete(&self, data: &TransactionSet) -> Vec<Candidates> {
+        let mut v = vec![apriori_run_one(data, self.min_support)];
+        let mut prev_transactions = TransactionIDs::from(data);
+        loop {
+            let prev = v.last().unwrap();
+            let (next, next_t) = AprioriTiDCandidates::new(prev.deref())
+                .next_with_next(&prev_transactions, self.min_support);
+            if next.is_empty() {
+                break;
+            }
+            prev_transactions = next_t;
+            v.push(next);
+        }
+        v
+    }
 }
 
 pub struct AprioriTiDCandidates<T: Deref<Target = CandidateType>>(T);
@@ -36,6 +55,25 @@ pub struct AprioriTiDCandidates<T: Deref<Target = CandidateType>>(T);
 impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
     pub fn new(v: T) -> Self {
         Self(v)
+    }
+    pub fn next_with_next(
+        &self,
+        data: &TransactionIDs,
+        min_sup: u64,
+    ) -> (Candidates, TransactionIDs) {
+        let mut tree = AprioriHashTree::new();
+        join(&self.0.iter().collect::<Vec<_>>(), |join| {
+            tree.add(&join);
+        });
+        let next = data.count_with_next(tree.deref_mut());
+        let mut new_candidates = Candidates::default();
+        tree.iter().for_each(|(v, n)| {
+            if n < min_sup {
+                return;
+            }
+            new_candidates.insert(v.to_vec());
+        });
+        (new_candidates, next)
     }
     pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
         let mut tree = AprioriHashTree::new();
@@ -86,6 +124,7 @@ mod tests {
         );
         let apriori = AprioriTID::new(2);
         let result = apriori.run(&example);
+        println!("{result:?}");
         assert_eq!(result.len(), 3);
         assert_eq!(result[0].len(), 5);
         assert_eq!(result[1].len(), 6);

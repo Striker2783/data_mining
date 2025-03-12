@@ -1,14 +1,10 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::DerefMut,
-};
+use std::collections::{HashMap, HashSet};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{
-    candidates_func::join,
-    hash_tree::{AprioriHashTree, AprioriHashTreeGeneric},
-};
+use crate::
+    candidates_func::join
+;
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
@@ -17,6 +13,14 @@ pub struct TransactionIDs {
 impl TransactionIDs {
     pub fn new(v: Vec<TransactionID>) -> Self {
         Self { v }
+    }
+    pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
+        let mut o = Self::default();
+        for d in &self.v {
+            let a = d.count_with_next(set);
+            o.v.push(a);
+        }
+        o
     }
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
         for d in &self.v {
@@ -73,6 +77,16 @@ impl TransactionID {
         Self { v }
     }
 
+    pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
+        let mut o = TransactionID::default();
+        join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+            if set.increment(&curr) {
+                o.v.insert(curr);
+            }
+        });
+        o
+    }
+
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
         join(&self.v.iter().collect::<Vec<_>>(), |curr| {
             set.increment(&curr);
@@ -123,23 +137,16 @@ impl TransactionID {
 }
 
 pub trait TransactionIdCounts {
-    fn increment(&mut self, v: &[usize]);
+    fn increment(&mut self, v: &[usize]) -> bool;
 }
 impl TransactionIdCounts for HashMap<Vec<usize>, u64> {
-    fn increment(&mut self, v: &[usize]) {
+    fn increment(&mut self, v: &[usize]) -> bool {
         if let Some(a) = self.get_mut(v) {
-            *a += 1
+            *a += 1;
+            true
+        } else {
+            false
         }
-    }
-}
-impl<const N: usize> TransactionIdCounts for AprioriHashTreeGeneric<N> {
-    fn increment(&mut self, v: &[usize]) {
-        self.increment(v);
-    }
-}
-impl TransactionIdCounts for AprioriHashTree {
-    fn increment(&mut self, v: &[usize]) {
-        self.deref_mut().increment(v);
     }
 }
 
