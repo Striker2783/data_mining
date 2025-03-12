@@ -54,11 +54,14 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
     }
     pub fn can_be_pruned(&self, v: &[usize]) -> bool {
         let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
-        for i in 0..(v.len() - 2) {
+        if !self.contains(&arr) {
+            return true;
+        }
+        for i in 0..(v.len() - 3) {
+            arr[i] = v[i];
             if !self.contains(&arr) {
                 return true;
             }
-            arr[i] = v[i + 1];
         }
         false
     }
