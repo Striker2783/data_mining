@@ -2,6 +2,8 @@ use std::{
     hash::{DefaultHasher, Hash, Hasher},
     ops::{Deref, DerefMut},
 };
+
+use crate::transaction_id::TransactionIdCounts;
 #[derive(Debug, Default)]
 pub struct AprioriHashTree(AprioriHashTreeGeneric<50>);
 
@@ -129,7 +131,7 @@ impl<const N: usize> AprioriHashTreeGeneric<N> {
         }
         self.length += 1;
     }
-    pub fn increment(&mut self, v: &[usize]) {
+    pub fn increment(&mut self, v: &[usize]) -> bool {
         assert!(!v.is_empty());
         let mut hasher = DefaultHasher::new();
         v[0].hash(&mut hasher);
@@ -142,17 +144,19 @@ impl<const N: usize> AprioriHashTreeGeneric<N> {
                         v.hash(&mut hasher);
                         curr = &mut hash_tree_internal_node.map[(hasher.finish() as usize) % N];
                     }
-                    Node::Leaf(_) => return,
+                    Node::Leaf(_) => return false,
                 }
             } else {
-                return;
+                return false;
             }
         }
         if let Some(n) = curr {
             match n.as_mut() {
-                Node::Internal(_) => (),
+                Node::Internal(_) => false,
                 Node::Leaf(hash_tree_leaf_node) => hash_tree_leaf_node.increment(v),
             }
+        } else {
+            false
         }
     }
     pub fn get_count(&self, v: &[usize]) -> Option<u64> {
@@ -224,10 +228,13 @@ impl<const N: usize> Default for HashTreeInternalNode<N> {
 struct HashTreeLeafNode(Vec<(Vec<usize>, u64)>);
 
 impl HashTreeLeafNode {
-    fn increment(&mut self, v: &[usize]) {
+    fn increment(&mut self, v: &[usize]) -> bool {
         let f = self.0.iter_mut().find(|v2| v2.0.eq(v));
         if let Some(v) = f {
             v.1 += 1;
+            true
+        } else {
+            false
         }
     }
     fn find(&self, v: &[usize]) -> Option<&(Vec<usize>, u64)> {
@@ -321,6 +328,11 @@ impl<'a, const N: usize> HashTreeIterator<'a, N> {
             stack: Vec::new(),
             outer: 0,
         }
+    }
+}
+impl<const N: usize> TransactionIdCounts for AprioriHashTreeGeneric<N> {
+    fn increment(&mut self, v: &[usize]) -> bool {
+        self.increment(v)
     }
 }
 

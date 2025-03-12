@@ -1,7 +1,4 @@
-use std::{
-    collections::HashSet,
-    ops::{Deref, DerefMut},
-};
+use std::ops::{Deref, DerefMut};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
@@ -85,7 +82,13 @@ impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
                 combinations /= (2..(t.len() - i + 1).min(i + 1)).product::<usize>();
             }
             if tree.len() > combinations {
-                nested_loops(|v| tree.increment(v), &data.transactions[idx], i);
+                nested_loops(
+                    |v| {
+                        tree.increment(v);
+                    },
+                    &data.transactions[idx],
+                    i,
+                );
             } else {
                 tree.for_each_mut(|v, n| {
                     if v.iter().all(|a| t.contains(a)) {
