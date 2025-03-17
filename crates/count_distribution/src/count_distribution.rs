@@ -8,15 +8,21 @@ use apriori::candidates::Candidates;
 use datasets::transaction_set::TransactionSet;
 
 use crate::process::CDProcess;
-
+/// The main struct used for Count Distribution
+/// This is a parallelized version of Apriori
 pub struct CountDistribution {
+    /// The dataset
     data: Arc<TransactionSet>,
+    /// Number of threads
     threads: usize,
+    /// The frequent itemsets found
     candidates: Vec<Arc<Candidates>>,
+    /// Min support count
     min_sup: u64,
 }
 
 impl CountDistribution {
+    /// Constructor
     pub fn new(data: Arc<TransactionSet>, threads: usize, min_sup: u64) -> Self {
         Self {
             data,
@@ -25,13 +31,16 @@ impl CountDistribution {
             min_sup,
         }
     }
-
+    /// Runs the algorithm
     pub fn run(mut self) -> Vec<Arc<Candidates>> {
+        // Creates a bunch of partitions
         let partitions = self.partitions();
+        // Runs pass 1 and 2
         self.run_one(&partitions);
         self.run_two(&partitions);
         for n in 3.. {
             let mut handles = Vec::new();
+            // Loops through all the partitions and create a thread to generate their itemsets
             for p in &partitions {
                 let p = Arc::clone(p);
                 let candidates = Arc::clone(&self.candidates[n - 2]);
@@ -41,10 +50,12 @@ impl CountDistribution {
                 });
                 handles.push(handle);
             }
+            // Put all the results in some Vector
             let mut results = Vec::new();
             for h in handles {
                 results.push(h.join().unwrap());
             }
+            // Combine the results into one map
             let mut map = HashMap::new();
             for tree in results {
                 for (v, n) in tree.iter() {
@@ -56,6 +67,7 @@ impl CountDistribution {
                     }
                 }
             }
+            // Create the frequent itemsets
             let mut set = Candidates::default();
             for (k, v) in map {
                 if v >= self.min_sup {
@@ -69,8 +81,10 @@ impl CountDistribution {
         }
         self.candidates
     }
+    /// Runs pass 2 of the algorithm
     fn run_two(&mut self, p: &[Arc<TransactionSet>]) {
         let mut handles = Vec::new();
+        // Create the threads to count the partitions
         for i in 0..self.threads {
             let p = Arc::clone(&p[i]);
             let handle = thread::spawn(move || {
@@ -79,24 +93,29 @@ impl CountDistribution {
             });
             handles.push(handle);
         }
+        // Get the results of all the threads
         let mut results = Vec::new();
         for h in handles {
             results.push(h.join().unwrap());
         }
+        // Combine them into one
         let p = results.split_at_mut(1);
         for i in 0..p.1.len() {
             p.0[0].add_assign(&p.1[i]);
         }
-        let mut map = Candidates::default();
+        // Creates the frequent itemsets
+        let mut set = Candidates::default();
         for (r, c, v) in results[0].iter() {
             if v >= self.min_sup {
-                map.insert(vec![c, r]);
+                set.insert(vec![c, r]);
             }
         }
-        self.candidates.push(Arc::new(map));
+        self.candidates.push(Arc::new(set));
     }
+    /// Runs pass 1 of the algorithm
     fn run_one(&mut self, p: &[Arc<TransactionSet>]) {
         let mut handles = Vec::new();
+        // Create all the threads for counting
         for i in 0..self.threads {
             let p = Arc::clone(&p[i]);
             let handle = thread::spawn(move || {
@@ -105,15 +124,18 @@ impl CountDistribution {
             });
             handles.push(handle);
         }
+        // Get all the results
         let mut results = Vec::new();
         for h in handles {
             results.push(h.join().unwrap());
         }
+        // Combine them into one at results[0]
         for i in 1..results.len() {
             for j in 0..results[i].len() {
                 results[0][j] += results[i][j];
             }
         }
+        // Creates the frequent itemsets
         let mut set = HashSet::new();
         for i in 0..results[0].len() {
             if results[0][i] >= self.min_sup {
@@ -122,6 +144,7 @@ impl CountDistribution {
         }
         self.candidates.push(Arc::new(set.into()));
     }
+    /// Partitions the dataset
     fn partitions(&self) -> Vec<Arc<TransactionSet>> {
         let mut v = Vec::new();
         for i in 0..self.threads {
@@ -129,6 +152,7 @@ impl CountDistribution {
         }
         v
     }
+    /// Creates a partition of the dataset for a thread
     fn partition(&self, thread: usize) -> TransactionSet {
         let count = self.data.len() / self.threads;
         let slice = if thread == self.threads - 1 {

@@ -2,6 +2,7 @@
 name = "count_distribution"
 version = "0.1.0"
 edition = "2024"
+description = "A crate that contains the implementation of Parallelized version of Apriori and AprioriHybrid"
 
 [dependencies]
 datasets = { path = "../datasets/"}
