@@ -10,4 +10,4 @@ count_distribution = { path = "./crates/count_distribution/" }
 datasets = { path = "./crates/datasets/" }
 
 [workspace]
-members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/dhp"]
+members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets"]
