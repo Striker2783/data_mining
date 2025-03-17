@@ -2,5 +2,6 @@
 name = "datasets"
 version = "0.1.0"
 edition = "2024"
+description = "A crate the contains a Transactional Set for Frequent Itemset Data Mining"
 
 [dependencies]
