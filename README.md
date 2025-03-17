@@ -12,7 +12,14 @@
 
 5. To time the algorithm run `cargo run -t --release -t [algorithm]`
 
-All outputs are printed to standard out.
+All outputs are printed to standard out. Use `> [file]` operator to send the output to a file. The inputs should be a file with lines being a transaction. Each transaction should be made up of a space separated list of item IDs.
+
+For example,
+
+```
+0 2 5 9 11
+2 6 3 4 12 63 23
+```
 
 ## Algorithms
 
