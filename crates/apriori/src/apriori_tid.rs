@@ -9,35 +9,45 @@ use crate::{
     hash_tree::AprioriHashTree,
     transaction_id::TransactionIDs,
 };
-
+/// The AprioriTID algorithm
 pub struct AprioriTID {
     min_support: u64,
 }
 
 impl AprioriTID {
+    /// Constructor
     pub fn new(min_support: u64) -> Self {
         Self { min_support }
     }
+    /// Runs the algorithm
     pub fn run(&self, data: &TransactionSet) -> Vec<Candidates> {
+        // Gets all the frequent items
         let mut v = vec![apriori_run_one(data, self.min_support)];
+        // Generates the TIDs
         let mut prev_transactions = TransactionIDs::from(data);
         loop {
             let prev = v.last().unwrap();
+            // Generates the frequent itemsets
             let next =
                 AprioriTiDCandidates::new(prev.deref()).next(&prev_transactions, self.min_support);
             if next.is_empty() {
                 break;
             }
+            // Generates the next TIDs
             prev_transactions = prev_transactions.from_prev(&next);
             v.push(next);
         }
         v
     }
+    /// Runs the algorithm a different (but proper) way, but slower
     pub fn run_obsolete(&self, data: &TransactionSet) -> Vec<Candidates> {
+        // Gets all the frequent items
         let mut v = vec![apriori_run_one(data, self.min_support)];
+        // Generates the TIDs
         let mut prev_transactions = TransactionIDs::from(data);
         loop {
             let prev = v.last().unwrap();
+            // Finds the frequent itemsets and next TIDs
             let (next, next_t) = AprioriTiDCandidates::new(prev.deref())
                 .next_with_next(&prev_transactions, self.min_support);
             if next.is_empty() {
@@ -49,23 +59,27 @@ impl AprioriTID {
         v
     }
 }
-
+/// Contains the algorithm for AprioriTID
 pub struct AprioriTiDCandidates<T: Deref<Target = CandidateType>>(T);
 
 impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
     pub fn new(v: T) -> Self {
         Self(v)
     }
+    /// Generates the frequent itemsets and next TIDs
     pub fn next_with_next(
         &self,
         data: &TransactionIDs,
         min_sup: u64,
     ) -> (Candidates, TransactionIDs) {
         let mut tree = AprioriHashTree::new();
+        // The join step for Apriori
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
             tree.add(&join);
         });
+        // Counts the TIDs and generates the next ones
         let next = data.count_with_next(tree.deref_mut());
+        // Returns the new frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
             if n < min_sup {
@@ -75,12 +89,16 @@ impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
         });
         (new_candidates, next)
     }
+    /// Generates the frequent itemsets
     pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
         let mut tree = AprioriHashTree::new();
+        // Join step
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
             tree.add(&join);
         });
+        // Counts into tree
         data.count(tree.deref_mut());
+        // Returns the frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
             if n < min_sup {
@@ -90,11 +108,14 @@ impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
         });
         new_candidates
     }
+    /// Generates the counts into a tree
     pub fn next_count(&self, data: &TransactionIDs) -> AprioriHashTree {
         let mut tree = AprioriHashTree::new();
+        // Join step
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
             tree.add(&join);
         });
+        // Counting
         data.count(tree.deref_mut());
         tree
     }

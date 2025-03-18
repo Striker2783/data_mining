@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
 use crate::candidates_func::join;
+/// The transaction IDs used for AprioriTID
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
     v: Vec<TransactionID>,
@@ -12,6 +13,7 @@ impl TransactionIDs {
     pub fn new(v: Vec<TransactionID>) -> Self {
         Self { v }
     }
+    /// Counts using TID into set, and returns the next set of TIDs
     pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
         let mut o = Self::default();
         for d in &self.v {
@@ -20,11 +22,13 @@ impl TransactionIDs {
         }
         o
     }
+    /// Counts using TID into set
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
         for d in &self.v {
             d.count(set);
         }
     }
+    /// Generates the next set of TIDs
     pub fn from_prev(&self, set: &HashSet<Vec<usize>>) -> TransactionIDs {
         let mut v = Vec::new();
         for d in &self.v {
@@ -36,6 +40,7 @@ impl TransactionIDs {
         }
         Self::new(v)
     }
+    /// Creates the set of TIDs for the first pass only
     pub fn start(data: &Vec<Vec<usize>>) -> TransactionIDs {
         let mut v = Vec::new();
         for d in data {
@@ -47,6 +52,7 @@ impl TransactionIDs {
         }
         Self::new(v)
     }
+    /// Generates the TIDs of size k
     pub fn from_transaction(data: &Vec<Vec<usize>>, k: usize, set: &HashSet<Vec<usize>>) -> Self {
         let mut v = Vec::new();
         for d in data {
@@ -64,7 +70,7 @@ impl From<&TransactionSet> for TransactionIDs {
         Self::start(&transaction_set.transactions)
     }
 }
-
+/// A Transaction ID for AprioriTID
 #[derive(Debug, Default)]
 pub struct TransactionID {
     v: HashSet<Vec<usize>>,
@@ -74,11 +80,14 @@ impl TransactionID {
     pub fn new(v: HashSet<Vec<usize>>) -> Self {
         Self { v }
     }
-
+    /// Counts the itemsets into set, and returns the next TID
     pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
+        // A heuristic to determine which method to count
         if set.len() < self.ids().len() {
+            // Count through looping through each candidate itemset
             let mut t = TransactionID::default();
             set.for_each(|v| {
+                // Counts based on v's subsets
                 let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
                 if !self.ids().contains(&arr) {
                     return;
@@ -96,6 +105,7 @@ impl TransactionID {
             }
             t
         } else {
+            // Counts via joining
             let mut o = TransactionID::default();
             join(&self.v.iter().collect::<Vec<_>>(), |curr| {
                 if set.increment(&curr) {
@@ -105,12 +115,13 @@ impl TransactionID {
             o
         }
     }
-
+    /// Counts the itemset into set
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
         join(&self.v.iter().collect::<Vec<_>>(), |curr| {
             set.increment(&curr);
         });
     }
+    /// Generates the next TID from previous itemsets
     pub fn from_prev(&self, set: &HashSet<Vec<usize>>) -> Self {
         let mut v = HashSet::new();
         join(&self.v.iter().collect::<Vec<_>>(), |curr| {
@@ -120,14 +131,18 @@ impl TransactionID {
         });
         Self { v }
     }
+    /// Generates the TID for pass 1
     pub fn start(data: &[usize]) -> Self {
         Self::new(data.iter().cloned().map(|n| vec![n]).collect())
     }
+    /// Generates the next TID from the dataset for size k
     pub fn from_transaction(data: &[usize], k: usize, set: &HashSet<Vec<usize>>) -> Self {
         if data.len() < k {
             return Self::default();
         }
+        // Another arbitrary heuristic to generate new TID
         if set.len() < 400 {
+            // Generates the TID based on looping through the itemset
             let setdata: HashSet<_> = data.iter().cloned().collect();
             let mut output = HashSet::new();
             for s in set {
@@ -137,6 +152,7 @@ impl TransactionID {
             }
             Self { v: output }
         } else {
+            // Generates the TID based on nested looping through the transaction set.
             let mut output = HashSet::new();
             nested_loops(
                 |a| {
@@ -157,11 +173,15 @@ impl TransactionID {
         &mut self.v
     }
 }
-
+/// A trait used for TID counting
 pub trait TransactionIdCounts {
+    /// Increments the count
     fn increment(&mut self, v: &[usize]) -> bool;
+    /// Gets the length of the count
     fn len(&self) -> usize;
+    /// A for each loop through the counter
     fn for_each(&self, f: impl FnMut(&[usize]));
+    /// Checks if the counter is empty
     fn is_empty(&self) -> bool {
         self.len() == 0
     }

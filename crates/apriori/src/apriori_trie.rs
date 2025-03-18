@@ -1,6 +1,7 @@
 use datasets::transaction_set::TransactionSet;
 
 use crate::trie::AprioriTrie;
+/// Runs the Apriori Algorithm using a Trie
 #[derive(Debug)]
 pub struct AprioriT {
     min_sup: u64,
@@ -8,29 +9,37 @@ pub struct AprioriT {
 }
 
 impl AprioriT {
+    /// Constructor
     pub fn new(min_sup: u64) -> Self {
         Self { min_sup, trie: AprioriTrie::new() }
     }
+    /// Runs the algorithm
     pub fn run(&mut self, t: &TransactionSet) {
+        // Add all the items to the trie.
         for i in 0..t.num_items {
             self.trie.add(&[i]);
         }
+        // Count all the items
         for v in t.iter() {
             self.trie.transaction_update(v, 1);
         }
         for i in 2.. {
-            let prev = self.trie.size();
+            // Cleans up the tree
             self.trie.cleaup(self.min_sup);
+            let prev = self.trie.size();
+            // The join step for Apriori
             self.trie.join(i, self.min_sup);
+            // If the size does not change, then the algorithm is done
             if self.trie.size() <= prev {
                 break;
             }
+            // Count up all the itemsets
             for v in t.iter() {
                 self.trie.transaction_update(v, i);
             }
         }
     }
-    
+    /// Gets the trie from the algorithm
     pub fn trie(self) -> AprioriTrie {
         self.trie
     }
