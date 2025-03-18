@@ -60,10 +60,10 @@ impl AprioriTID {
     }
 }
 /// Contains the algorithm for AprioriTID
-pub struct AprioriTiDCandidates<T: Deref<Target = CandidateType>>(T);
+pub struct AprioriTiDCandidates<'a>(&'a CandidateType);
 
-impl<T: Deref<Target = CandidateType>> AprioriTiDCandidates<T> {
-    pub fn new(v: T) -> Self {
+impl<'a> AprioriTiDCandidates<'a> {
+    pub fn new(v: &'a CandidateType) -> Self {
         Self(v)
     }
     /// Generates the frequent itemsets and next TIDs

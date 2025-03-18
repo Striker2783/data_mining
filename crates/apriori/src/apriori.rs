@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
@@ -38,24 +38,19 @@ impl Apriori {
     }
 }
 /// The wrapper for AprioriCandidates
-pub struct AprioriCandidates<T>(T);
+pub struct AprioriCandidates<'a>(&'a CandidateType);
 /// Dereferences to the underlying struct
-impl<T: Deref<Target = CandidateType>> DerefMut for AprioriCandidates<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-impl<T: Deref<Target = CandidateType>> Deref for AprioriCandidates<T> {
-    type Target = T;
+impl Deref for AprioriCandidates<'_> {
+    type Target = CandidateType;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
-impl<T: Deref<Target = CandidateType>> AprioriCandidates<T> {
+impl<'a> AprioriCandidates<'a> {
     /// Constructor
-    pub fn new(v: T) -> Self {
+    pub fn new(v: &'a CandidateType) -> Self {
         Self(v)
     }
     /// A prune function for Apriori
