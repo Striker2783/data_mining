@@ -140,31 +140,15 @@ impl TransactionID {
         if data.len() < k {
             return Self::default();
         }
-        // Another arbitrary heuristic to generate new TID
-        if set.len() < 400 {
-            // Generates the TID based on looping through the itemset
-            let setdata: HashSet<_> = data.iter().cloned().collect();
-            let mut output = HashSet::new();
-            for s in set {
-                if s.iter().all(|n| setdata.contains(n)) {
-                    output.insert(s.to_vec());
-                }
+        // Generates the TID based on looping through the itemset
+        let setdata: HashSet<_> = data.iter().cloned().collect();
+        let mut output = HashSet::new();
+        for s in set {
+            if s.iter().all(|n| setdata.contains(n)) {
+                output.insert(s.to_vec());
             }
-            Self { v: output }
-        } else {
-            // Generates the TID based on nested looping through the transaction set.
-            let mut output = HashSet::new();
-            nested_loops(
-                |a| {
-                    if set.contains(a) {
-                        output.insert(a.to_vec());
-                    }
-                },
-                data,
-                k,
-            );
-            Self { v: output }
         }
+        Self { v: output }
     }
     pub fn ids(&self) -> &HashSet<Vec<usize>> {
         &self.v

@@ -45,12 +45,11 @@ impl AprioriHybrid {
             } else {
                 // AprioriTID
                 let prev = apriori_tid.last().unwrap();
-                let next =
-                    AprioriTiDCandidates::new(prev.deref()).next(&prev_trans, self.min_support);
+                let (next, b) = AprioriTiDCandidates::new(prev.deref()).next_with_next(&prev_trans, self.min_support);
                 if next.is_empty() {
                     break;
                 }
-                prev_trans = prev_trans.from_prev(&next);
+                prev_trans = b;
                 apriori_tid.push(next);
             }
         }

@@ -27,26 +27,6 @@ impl AprioriTID {
         let mut prev_transactions = TransactionIDs::from(data);
         loop {
             let prev = v.last().unwrap();
-            // Generates the frequent itemsets
-            let next =
-                AprioriTiDCandidates::new(prev.deref()).next(&prev_transactions, self.min_support);
-            if next.is_empty() {
-                break;
-            }
-            // Generates the next TIDs
-            prev_transactions = prev_transactions.from_prev(&next);
-            v.push(next);
-        }
-        v
-    }
-    /// Runs the algorithm a different (but proper) way, but slower
-    pub fn run_obsolete(&self, data: &TransactionSet) -> Vec<Candidates> {
-        // Gets all the frequent items
-        let mut v = vec![apriori_run_one(data, self.min_support)];
-        // Generates the TIDs
-        let mut prev_transactions = TransactionIDs::from(data);
-        loop {
-            let prev = v.last().unwrap();
             // Finds the frequent itemsets and next TIDs
             let (next, next_t) = AprioriTiDCandidates::new(prev.deref())
                 .next_with_next(&prev_transactions, self.min_support);
@@ -72,13 +52,7 @@ impl<'a> AprioriTiDCandidates<'a> {
         data: &TransactionIDs,
         min_sup: u64,
     ) -> (Candidates, TransactionIDs) {
-        let mut tree = AprioriHashTree::new();
-        // The join step for Apriori
-        join(&self.0.iter().collect::<Vec<_>>(), |join| {
-            tree.add(&join);
-        });
-        // Counts the TIDs and generates the next ones
-        let next = data.count_with_next(tree.deref_mut());
+        let (tree, next) = self.next_count_with_next(data);
         // Returns the new frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
@@ -89,15 +63,22 @@ impl<'a> AprioriTiDCandidates<'a> {
         });
         (new_candidates, next)
     }
-    /// Generates the frequent itemsets
-    pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
+    pub fn next_count_with_next(
+        &self,
+        data: &TransactionIDs,
+    ) -> (AprioriHashTree, TransactionIDs) {
         let mut tree = AprioriHashTree::new();
-        // Join step
+        // The join step for Apriori
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
             tree.add(&join);
         });
-        // Counts into tree
-        data.count(tree.deref_mut());
+        // Counts the TIDs and generates the next ones
+        let next = data.count_with_next(tree.deref_mut());
+        (tree, next)
+    }
+    /// Generates the frequent itemsets
+    pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
+        let tree = self.next_count(data);
         // Returns the frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
