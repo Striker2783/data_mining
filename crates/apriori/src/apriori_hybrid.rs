@@ -33,6 +33,8 @@ impl AprioriHybrid {
                 let prev = apriori.pop().unwrap();
                 prev_trans = TransactionIDs::from_transaction(&data.transactions, i - 1, &prev);
                 apriori_tid.push(prev);
+            } else if i > self.switch {
+                prev_trans = prev_trans.from_prev(apriori_tid.last().unwrap());
             }
             // Apriori
             if i < self.switch {
@@ -50,7 +52,6 @@ impl AprioriHybrid {
                 if next.is_empty() {
                     break;
                 }
-                prev_trans = prev_trans.from_prev(&next);
                 apriori_tid.push(next);
             }
         }
