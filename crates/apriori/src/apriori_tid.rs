@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use datasets::transaction_set::TransactionSet;
 
 use crate::{
-    apriori::apriori_run_one,
+    apriori::{apriori_run_one, AprioriCandidates},
     candidates::{CandidateType, Candidates},
     candidates_func::join,
     hash_tree::AprioriHashTree,
@@ -73,8 +73,11 @@ impl<'a> AprioriTiDCandidates<'a> {
         min_sup: u64,
     ) -> (Candidates, TransactionIDs) {
         let mut tree = AprioriHashTree::new();
-        // The join step for Apriori
+        // The join and prune step for Apriori
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
+            if AprioriCandidates::new(self.0).can_be_pruned(&join) {
+                return;
+            }
             tree.add(&join);
         });
         // Counts the TIDs and generates the next ones
@@ -91,13 +94,7 @@ impl<'a> AprioriTiDCandidates<'a> {
     }
     /// Generates the frequent itemsets
     pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
-        let mut tree = AprioriHashTree::new();
-        // Join step
-        join(&self.0.iter().collect::<Vec<_>>(), |join| {
-            tree.add(&join);
-        });
-        // Counts into tree
-        data.count(tree.deref_mut());
+        let tree = self.next_count(data);
         // Returns the frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
@@ -113,6 +110,9 @@ impl<'a> AprioriTiDCandidates<'a> {
         let mut tree = AprioriHashTree::new();
         // Join step
         join(&self.0.iter().collect::<Vec<_>>(), |join| {
+            if AprioriCandidates::new(self.0).can_be_pruned(&join) {
+                return;
+            }
             tree.add(&join);
         });
         // Counting

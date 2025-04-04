@@ -55,6 +55,9 @@ impl<'a> AprioriCandidates<'a> {
     }
     /// A prune function for Apriori
     pub fn can_be_pruned(&self, v: &[usize]) -> bool {
+        if v.len() < 3 {
+            return false;
+        }
         // The vector used to check subsets
         let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
         // Check the subset without the first element.
