@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 /// Joins together the itemsets for Apriori
-pub fn join<T: FnMut(Vec<usize>)>(v: &[&Vec<usize>], mut f: T) {
+pub fn join<'a, T: FnMut(Vec<usize>), U: Iterator<Item = &'a Vec<usize>>>(
+    v: U,
+    mut f: T,
+) {
     // A map containing the prefixes and the last elements
     let mut map = HashMap::new();
-    for c in v.iter() {
+    for c in v {
         map.entry(&c[..(c.len() - 1)])
             .and_modify(|v: &mut Vec<usize>| v.push(*c.last().unwrap()))
             .or_insert(vec![*c.last().unwrap()]);
     }
     // Loops through the map
     for (k, v) in map.into_iter() {
-        // Join together each 2 combinations of v 
+        // Join together each 2 combinations of v
         for i in 0..v.len() {
             for j in (i + 1)..v.len() {
                 let c1 = v[i];

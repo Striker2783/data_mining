@@ -74,7 +74,7 @@ impl<'a> AprioriTiDCandidates<'a> {
     ) -> (Candidates, TransactionIDs) {
         let mut tree = AprioriHashTree::new();
         // The join and prune step for Apriori
-        join(&self.0.iter().collect::<Vec<_>>(), |join| {
+        join(self.0.iter(), |join| {
             if AprioriCandidates::new(self.0).can_be_pruned(&join) {
                 return;
             }
@@ -109,7 +109,7 @@ impl<'a> AprioriTiDCandidates<'a> {
     pub fn next_count(&self, data: &TransactionIDs) -> AprioriHashTree {
         let mut tree = AprioriHashTree::new();
         // Join step
-        join(&self.0.iter().collect::<Vec<_>>(), |join| {
+        join(self.0.iter(), |join| {
             if AprioriCandidates::new(self.0).can_be_pruned(&join) {
                 return;
             }

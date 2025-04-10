@@ -107,7 +107,7 @@ impl TransactionID {
         } else {
             // Counts via joining
             let mut o = TransactionID::default();
-            join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+            join(self.v.iter(), |curr| {
                 if set.increment(&curr) {
                     o.v.insert(curr);
                 }
@@ -117,14 +117,14 @@ impl TransactionID {
     }
     /// Counts the itemset into set
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) {
-        join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+        join(self.v.iter(), |curr| {
             set.increment(&curr);
         });
     }
     /// Generates the next TID from previous itemsets
     pub fn from_prev(&self, set: &HashSet<Vec<usize>>) -> Self {
         let mut v = HashSet::new();
-        join(&self.v.iter().collect::<Vec<_>>(), |curr| {
+        join(self.v.iter(), |curr| {
             if set.contains(&curr) {
                 v.insert(curr);
             }

@@ -78,7 +78,7 @@ impl<'a> AprioriCandidates<'a> {
         assert!(i > 2);
         let mut tree = AprioriHashTree::new();
         // Joins relevant frequent itemsets 
-        join(&self.iter().collect::<Vec<_>>(), |v| {
+        join(self.iter(), |v| {
             if self.can_be_pruned(&v) {
                 return;
             }
