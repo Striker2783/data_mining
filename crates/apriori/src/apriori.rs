@@ -75,7 +75,7 @@ impl<'a> AprioriCandidates<'a> {
     }
     pub fn create_tree(&self) -> AprioriHashTree {
         let mut tree = AprioriHashTree::new();
-        // Joins relevant frequent itemsets 
+        // Joins relevant frequent itemsets
         join(self.iter(), |v| {
             // Prunes
             if self.can_be_pruned(&v) {
@@ -96,29 +96,14 @@ impl<'a> AprioriCandidates<'a> {
             if t.len() < i {
                 continue;
             }
-            // A heuristic value to determine which way to count
-            let mut combinations = ((t.len() - i + 1).max(i + 1)..=t.len())
-                .fold(1usize, |acc, x| acc.saturating_mul(x));
-            if combinations != usize::MAX {
-                combinations /= (2..(t.len() - i + 1).min(i + 1)).product::<usize>();
-            }
-            if tree.len() > combinations {
-                // If the number of itemsets to be counted is larger, then count via nested loops
-                nested_loops(
-                    |v| {
-                        tree.increment(v);
-                    },
-                    &data.transactions[idx],
-                    i,
-                );
-            } else {
-                // Otherwise count for each itemset
-                tree.for_each_mut(|v, n| {
-                    if v.iter().all(|a| t.contains(a)) {
-                        *n += 1;
-                    }
-                });
-            }
+            // Count via nested loops
+            nested_loops(
+                |v| {
+                    tree.increment(v);
+                },
+                &data.transactions[idx],
+                i,
+            );
         }
         tree
     }

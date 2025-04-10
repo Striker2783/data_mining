@@ -44,15 +44,15 @@ impl CDProcessHybrid {
             return counter;
         }
         if n == self.switch {
+            let (c, b) = TransactionIDs::from_transaction_next(&self.set.transactions, n - 1, c);
             // At the switch, create the TIDs from the transactions
-            self.tid = TransactionIDs::from_transaction(&self.set.transactions, n - 1, c);
+            self.tid = b;
+            let map = c.iter().map(|(v, n)| (v.to_vec(), n)).collect();
+            return map;
         } else if n > self.switch {
-            // After the switch, create the TIDs from the previous ones
-            self.tid = self.tid.from_prev(c);
-        }
-        if n >= self.switch {
+            let (c, b) = AprioriTiDCandidates::new(c.deref()).count_with_next(&self.tid);
+            self.tid = b;
             // AprioriTID counting after the switch
-            let c = AprioriTiDCandidates::new(c.deref()).next_count(&self.tid);
             c.iter().map(|(v, n)| (v.to_vec(), n)).collect()
         } else {
             // Apriori counting before the switch
