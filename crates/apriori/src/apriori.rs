@@ -73,17 +73,22 @@ impl<'a> AprioriCandidates<'a> {
         }
         false
     }
-    /// Counts the dataset
-    pub fn run_count(&self, data: &TransactionSet, i: usize) -> AprioriHashTree {
-        assert!(i > 2);
+    pub fn create_tree(&self) -> AprioriHashTree {
         let mut tree = AprioriHashTree::new();
         // Joins relevant frequent itemsets 
         join(self.iter(), |v| {
+            // Prunes
             if self.can_be_pruned(&v) {
                 return;
             }
             tree.add(&v);
         });
+        tree
+    }
+    /// Counts the dataset
+    pub fn run_count(&self, data: &TransactionSet, i: usize) -> AprioriHashTree {
+        assert!(i > 2);
+        let mut tree = self.create_tree();
         // Loops through each transaction in the dataset
         for idx in 0..data.transactions.len() {
             let t = &data.transactions[idx];

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::candidates_func::join;
+use crate::{apriori::AprioriCandidates, candidates_func::join, hash_tree::AprioriHashTree};
 /// The transaction IDs used for AprioriTID
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
@@ -63,6 +63,23 @@ impl TransactionIDs {
             v.push(value);
         }
         Self::new(v)
+    }
+    /// Generates the TIDs of size k
+    pub fn from_transaction_next(
+        data: &Vec<Vec<usize>>,
+        k: usize,
+        set: &HashSet<Vec<usize>>,
+    ) -> (AprioriHashTree, Self) {
+        let mut tree = AprioriCandidates::new(set).create_tree();
+        let mut v = Vec::new();
+        for d in data {
+            let value = TransactionID::from_transaction_next(d, k, &mut tree);
+            if value.ids().is_empty() {
+                continue;
+            }
+            v.push(value);
+        }
+        (tree, Self::new(v))
     }
 }
 impl From<&TransactionSet> for TransactionIDs {
@@ -165,6 +182,24 @@ impl TransactionID {
             );
             Self { v: output }
         }
+    }
+    /// Generates the next TID from the dataset for size k
+    pub fn from_transaction_next(data: &[usize], k: usize, set: &mut AprioriHashTree) -> Self {
+        if data.len() < k {
+            return Self::default();
+        }
+        // Generates the TID based on nested looping through the transaction set.
+        let mut output = HashSet::new();
+        nested_loops(
+            |a| {
+                if set.increment(a) {
+                    output.insert(a.to_vec());
+                }
+            },
+            data,
+            k + 1,
+        );
+        Self { v: output }
     }
     pub fn ids(&self) -> &HashSet<Vec<usize>> {
         &self.v

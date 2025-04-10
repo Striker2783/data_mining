@@ -3,9 +3,8 @@ use std::ops::{Deref, DerefMut};
 use datasets::transaction_set::TransactionSet;
 
 use crate::{
-    apriori::{apriori_run_one, AprioriCandidates},
+    apriori::{AprioriCandidates, apriori_run_one},
     candidates::{CandidateType, Candidates},
-    candidates_func::join,
     hash_tree::AprioriHashTree,
     transaction_id::TransactionIDs,
 };
@@ -72,16 +71,7 @@ impl<'a> AprioriTiDCandidates<'a> {
         data: &TransactionIDs,
         min_sup: u64,
     ) -> (Candidates, TransactionIDs) {
-        let mut tree = AprioriHashTree::new();
-        // The join and prune step for Apriori
-        join(self.0.iter(), |join| {
-            if AprioriCandidates::new(self.0).can_be_pruned(&join) {
-                return;
-            }
-            tree.add(&join);
-        });
-        // Counts the TIDs and generates the next ones
-        let next = data.count_with_next(tree.deref_mut());
+        let (tree, next) = self.count_with_next(data);
         // Returns the new frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
@@ -91,6 +81,13 @@ impl<'a> AprioriTiDCandidates<'a> {
             new_candidates.insert(v.to_vec());
         });
         (new_candidates, next)
+    }
+    /// Generates the counts for candidate itemsets and next TIDs
+    pub fn count_with_next(&self, data: &TransactionIDs) -> (AprioriHashTree, TransactionIDs) {
+        let mut tree = AprioriCandidates::new(self.0).create_tree();
+        // Counts the TIDs and generates the next ones
+        let next = data.count_with_next(tree.deref_mut());
+        (tree, next)
     }
     /// Generates the frequent itemsets
     pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> Candidates {
@@ -107,14 +104,7 @@ impl<'a> AprioriTiDCandidates<'a> {
     }
     /// Generates the counts into a tree
     pub fn next_count(&self, data: &TransactionIDs) -> AprioriHashTree {
-        let mut tree = AprioriHashTree::new();
-        // Join step
-        join(self.0.iter(), |join| {
-            if AprioriCandidates::new(self.0).can_be_pruned(&join) {
-                return;
-            }
-            tree.add(&join);
-        });
+        let mut tree = AprioriCandidates::new(self.0).create_tree();
         // Counting
         data.count(tree.deref_mut());
         tree
