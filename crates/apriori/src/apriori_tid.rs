@@ -28,7 +28,7 @@ impl AprioriTID {
             let prev = v.last().unwrap();
             // Finds the frequent itemsets and next TIDs
             let (next, next_t) = AprioriTiDCandidates::new(prev.deref())
-                .next_with_next(&prev_transactions, self.min_support);
+                .next(&prev_transactions, self.min_support);
             if next.is_empty() {
                 break;
             }
@@ -46,12 +46,12 @@ impl<'a> AprioriTiDCandidates<'a> {
         Self(v)
     }
     /// Generates the frequent itemsets and next TIDs
-    pub fn next_with_next(
+    pub fn next(
         &self,
         data: &TransactionIDs,
         min_sup: u64,
     ) -> (Candidates, TransactionIDs) {
-        let (tree, next) = self.count_with_next(data);
+        let (tree, next) = self.count(data);
         // Returns the new frequent itemsets
         let mut new_candidates = Candidates::default();
         tree.iter().for_each(|(v, n)| {
@@ -63,10 +63,10 @@ impl<'a> AprioriTiDCandidates<'a> {
         (new_candidates, next)
     }
     /// Generates the counts for candidate itemsets and next TIDs
-    pub fn count_with_next(&self, data: &TransactionIDs) -> (AprioriHashTree, TransactionIDs) {
+    pub fn count(&self, data: &TransactionIDs) -> (AprioriHashTree, TransactionIDs) {
         let mut tree = AprioriCandidates::new(self.0).create_tree();
         // Counts the TIDs and generates the next ones
-        let next = data.count_with_next(tree.deref_mut());
+        let next = data.count(tree.deref_mut());
         (tree, next)
     }
 }

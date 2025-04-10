@@ -14,10 +14,10 @@ impl TransactionIDs {
         Self { v }
     }
     /// Counts using TID into set, and returns the next set of TIDs
-    pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
+    pub fn count<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
         let mut o = Self::default();
         for d in &self.v {
-            let a = d.count_with_next(set);
+            let a = d.count(set);
             o.v.push(a);
         }
         o
@@ -35,7 +35,7 @@ impl TransactionIDs {
         Self::new(v)
     }
     /// Generates the TIDs of size k
-    pub fn from_transaction_next(
+    pub fn from_transaction(
         data: &Vec<Vec<usize>>,
         k: usize,
         set: &HashSet<Vec<usize>>,
@@ -43,7 +43,7 @@ impl TransactionIDs {
         let mut tree = AprioriCandidates::new(set).create_tree();
         let mut v = Vec::new();
         for d in data {
-            let value = TransactionID::from_transaction_next(d, k, &mut tree);
+            let value = TransactionID::from_transaction(d, k, &mut tree);
             if value.ids().is_empty() {
                 continue;
             }
@@ -68,7 +68,7 @@ impl TransactionID {
         Self { v }
     }
     /// Counts the itemsets into set, and returns the next TID
-    pub fn count_with_next<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
+    pub fn count<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
         // Count through looping through each candidate itemset
         let mut t = TransactionID::default();
         set.for_each(|v| {
@@ -95,7 +95,7 @@ impl TransactionID {
         Self::new(data.iter().cloned().map(|n| vec![n]).collect())
     }
     /// Generates the next TID from the dataset for size k
-    pub fn from_transaction_next(data: &[usize], k: usize, set: &mut AprioriHashTree) -> Self {
+    pub fn from_transaction(data: &[usize], k: usize, set: &mut AprioriHashTree) -> Self {
         if data.len() < k {
             return Self::default();
         }

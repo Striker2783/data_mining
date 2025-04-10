@@ -31,7 +31,7 @@ impl AprioriHybrid {
             // When we switch, we generate TIDs from the transaction set
             if i == self.switch {
                 let prev = apriori.last().unwrap();
-                let (tree, a) = TransactionIDs::from_transaction_next(&data.transactions, i - 1, prev.deref());
+                let (tree, a) = TransactionIDs::from_transaction(&data.transactions, i - 1, prev.deref());
                 let mut c = Candidates::default();
                 tree.iter().for_each(|(v, count)| {
                     if count < self.min_support {
@@ -55,7 +55,7 @@ impl AprioriHybrid {
                 // AprioriTID
                 let prev = apriori_tid.last().unwrap();
                 let (next, b) =
-                    AprioriTiDCandidates::new(prev.deref()).next_with_next(&prev_trans, self.min_support);
+                    AprioriTiDCandidates::new(prev.deref()).next(&prev_trans, self.min_support);
                 if next.is_empty() {
                     break;
                 }
