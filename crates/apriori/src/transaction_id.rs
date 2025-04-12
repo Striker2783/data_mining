@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{apriori::AprioriCandidates, hash_tree::AprioriHashTree};
+use crate::{apriori::AprioriCandidates, candidates_func::join, hash_tree::AprioriHashTree};
 /// The transaction IDs used for AprioriTID
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
@@ -69,25 +69,13 @@ impl TransactionID {
     }
     /// Counts the itemsets into set, and returns the next TID
     pub fn count<T: TransactionIdCounts>(&self, set: &mut T) -> Self {
-        // Count through looping through each candidate itemset
+        // Count through joining together IDs
         let mut t = TransactionID::default();
-        set.for_each(|v| {
-            // Counts based on v's subsets
-            let mut arr: Vec<_> = v.iter().cloned().skip(1).collect();
-            if !self.ids().contains(&arr) {
-                return;
+        join(self.v.iter(), |v| {
+            if set.increment(&v) {
+                t.v.insert(v);
             }
-            for i in 0..arr.len() {
-                arr[i] = v[i];
-                if !self.ids().contains(&arr) {
-                    return;
-                }
-            }
-            t.ids_mut().insert(v.to_vec());
         });
-        for v in t.ids() {
-            set.increment(v);
-        }
         t
     }
     /// Generates the TID for pass 1
