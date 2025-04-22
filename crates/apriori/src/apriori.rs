@@ -96,14 +96,29 @@ impl<'a> AprioriCandidates<'a> {
             if t.len() < i {
                 continue;
             }
-            // Count via nested loops
-            nested_loops(
-                |v| {
-                    tree.increment(v);
-                },
-                &data.transactions[idx],
-                i,
-            );
+            // A heuristic value to determine which way to count
+            let mut combinations = ((t.len() - i + 1).max(i + 1)..=t.len())
+                .fold(1f64, |acc, x| acc * (x as f64));
+            if combinations.is_finite() {
+                combinations /= (2..(t.len() - i + 1).min(i + 1)).fold(1f64, |a, n| a * (n as f64));
+            }
+            if tree.len() as f64 > combinations {
+                // If the number of itemsets to be counted is larger, then count via nested loops
+                nested_loops(
+                    |v| {
+                        tree.increment(v);
+                    },
+                    &data.transactions[idx],
+                    i,
+                );
+            } else {
+                // Otherwise count for each itemset
+                tree.for_each_mut(|v, n| {
+                    if v.iter().all(|a| t.contains(a)) {
+                        *n += 1;
+                    }
+                });
+            }
         }
         tree
     }
