@@ -1,8 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, ops::DerefMut};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
-use crate::{apriori::AprioriCandidates, candidates_func::join, hash_tree::AprioriHashTree};
+use crate::{apriori::{apriori_count, AprioriCandidates}, candidates_func::join, hash_tree::AprioriHashTree};
 /// The transaction IDs used for AprioriTID
 #[derive(Debug, Default)]
 pub struct TransactionIDs {
@@ -84,20 +84,11 @@ impl TransactionID {
     }
     /// Generates the next TID from the dataset for size k
     pub fn from_transaction(data: &[usize], k: usize, set: &mut AprioriHashTree) -> Self {
-        if data.len() < k {
-            return Self::default();
-        }
         // Generates the TID based on nested looping through the transaction set.
         let mut output = HashSet::new();
-        nested_loops(
-            |a| {
-                if set.increment(a) {
-                    output.insert(a.to_vec());
-                }
-            },
-            data,
-            k + 1,
-        );
+        apriori_count(data, k + 1, set.deref_mut(), |v| {
+            output.insert(v.to_vec());
+        });
         Self { v: output }
     }
     pub fn ids(&self) -> &HashSet<Vec<usize>> {

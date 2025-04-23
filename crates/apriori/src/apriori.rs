@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
@@ -89,36 +89,8 @@ impl<'a> AprioriCandidates<'a> {
     pub fn run_count(&self, data: &TransactionSet, i: usize) -> AprioriHashTree {
         assert!(i > 2);
         let mut tree = self.create_tree();
-        // Loops through each transaction in the dataset
-        for idx in 0..data.transactions.len() {
-            let t = &data.transactions[idx];
-            // Skips any that are of too little length
-            if t.len() < i {
-                continue;
-            }
-            // A heuristic value to determine which way to count
-            let mut combinations = ((t.len() - i + 1).max(i + 1)..=t.len())
-                .fold(1f64, |acc, x| acc * (x as f64));
-            if combinations.is_finite() {
-                combinations /= (2..(t.len() - i + 1).min(i + 1)).fold(1f64, |a, n| a * (n as f64));
-            }
-            if tree.len() as f64 > combinations {
-                // If the number of itemsets to be counted is larger, then count via nested loops
-                nested_loops(
-                    |v| {
-                        tree.increment(v);
-                    },
-                    &data.transactions[idx],
-                    i,
-                );
-            } else {
-                // Otherwise count for each itemset
-                tree.for_each_mut(|v, n| {
-                    if v.iter().all(|a| t.contains(a)) {
-                        *n += 1;
-                    }
-                });
-            }
+        for d in data.iter() {
+            apriori_count(d, i, tree.deref_mut(), |_| {});
         }
         tree
     }
@@ -140,6 +112,59 @@ impl<'a> AprioriCandidates<'a> {
         set
     }
 }
+pub trait AprioriCounting {
+    fn len(&self) -> usize;
+    fn increment(&mut self, v: &[usize]) -> bool;
+    fn for_each_mut(&mut self, f: impl FnMut(&[usize], &mut u64));
+}
+pub fn apriori_count(
+    t: &[usize],
+    i: usize,
+    d: &mut impl AprioriCounting,
+    mut f: impl FnMut(&[usize]),
+) {
+    // Loops through each transaction in the dataset
+    // Skips any that are of too little length
+    if t.len() < i {
+        return;
+    }
+    // A heuristic value to determine which way to count
+    let mut combinations =
+        ((t.len() - i + 1).max(i + 1)..=t.len()).fold(1f64, |acc, x| acc * (x as f64));
+    if combinations.is_finite() {
+        combinations /= (2..(t.len() - i + 1).min(i + 1)).fold(1f64, |a, n| a * (n as f64));
+    }
+    if (d.len() as f64) * (t.len() as f64) > combinations * 13f64 {
+        // If the number of itemsets to be counted is larger, then count via nested loops
+        nested_loops(
+            |v| {
+                if d.increment(v) {
+                    f(v);
+                }
+            },
+            &t,
+            i,
+        );
+    } else {
+        // Otherwise count for each itemset
+        d.for_each_mut(|v, n| {
+            let mut iter = t.iter().cloned();
+            'outer: for &a in v {
+                while let Some(b) = iter.next() {
+                    match a.cmp(&b) {
+                        std::cmp::Ordering::Less => return,
+                        std::cmp::Ordering::Equal => continue 'outer,
+                        std::cmp::Ordering::Greater => continue,
+                    }
+                }
+                return;
+            }
+            *n += 1;
+            f(v);
+        });
+    }
+}
+
 /// Apriori pass 1
 pub fn apriori_run_one(d: &TransactionSet, min_sup: u64) -> Candidates {
     let first = apriori_run_one_count(d);

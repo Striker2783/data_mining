@@ -3,7 +3,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::transaction_id::TransactionIdCounts;
+use crate::{apriori::AprioriCounting, transaction_id::TransactionIdCounts};
 /// A Hash Tree for the Apriori Algorithm
 #[derive(Debug, Default)]
 pub struct AprioriHashTree(AprioriHashTreeGeneric<50>);
@@ -384,6 +384,20 @@ impl<const N: usize> TransactionIdCounts for AprioriHashTreeGeneric<N> {
 
     fn for_each(&self, mut f: impl FnMut(&[usize])) {
         self.iter().for_each(|v| f(v.0));
+    }
+}
+
+impl<const N: usize> AprioriCounting for AprioriHashTreeGeneric<N> {
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn increment(&mut self, v: &[usize]) -> bool {
+        self.increment(v)
+    }
+
+    fn for_each_mut(&mut self, f: impl FnMut(&[usize], &mut u64)) {
+        self.for_each_mut(f);
     }
 }
 
