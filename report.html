@@ -73,10 +73,10 @@
 					generates candidate steps by joining together two frequent itemsets or
 					items for the first pass with the same prefix and prunes them based on
 					whether its subsets are also frequent. After, it passes through the
-					database and counts those item sets and filters for frequent item
-					sets. If no frequent item sets remain, then the algorithm stops.
-					Otherwise, we repeat generating candidate item sets and filtering for
-					frequent item sets.
+					database, counts those item sets, and filters for frequent item sets.
+					If no frequent item sets remain, then the algorithm stops. Otherwise,
+					we repeat generating candidate item sets and filtering for frequent
+					item sets.
 				</p>
 				<p>
 					Apriori-TID uses a transaction identifier (TID) for each transaction
@@ -89,14 +89,13 @@
 					sets and generate candidate item sets similar to Apriori.
 				</p>
 				<p>
-					Multithreaded Apriori-Hybrid works by partitioning the
-					database and giving each thread a partition. Each thread will also
-					receive candidate item sets to be used for counting. It then uses
+					Multithreaded Apriori-Hybrid works by partitioning the database and
+					giving each thread a partition. Each thread will also receive frequent
+					item sets to be used for generating candidate item sets. It then uses
 					Apriori-Hybrid to count the candidate item sets on its partition and
 					sends it back to some main thread. The main thread then filters for
-					frequent item sets and generates the new candidate item sets to send
-					to each thread. This repeats until no new frequent item sets are
-					created.
+					frequent item sets and sends them to each thread. This repeats until
+					no new frequent item sets are created.
 				</p>
 			</section>
 			<section id="Implementation">
@@ -109,15 +108,16 @@
 					get the frequent items. For the second pass, I used a lower triangular
 					matrix stored as a 1D array with length
 					<span class="math-inline">n × (n - 1) / 2 - n</span>, where n is the
-					number of items in the transaction set. When counting, I index into
-					the matrix and increment the corresponding count for each two-item set
-					in the transaction. After the counting, I filter each two-item set to
-					find the frequent two-item sets.
+					number of items in the transaction set. The index value for (a, b)
+					where a < b is <span class="math-inline">a * (a - 1) / 2 + b</span>.
+					When counting, I index into the matrix and increment the corresponding
+					count for each two-item set in the transaction. After the counting, I
+					filter each two-item set to find the frequent two-item sets.
 				</p>
 				<p>
 					For the join step, I have a map that has indices of the prefixes (all
-					the items except the last) of all the frequent item sets and values
-					are an array of the last item. I loop through each entry in the map,
+					the items except the last) of all the frequent item sets. The values
+					are an array of the last items. I loop through each entry in the map,
 					and loop through each 2-combination of the value to join them together
 					into a candidate item set by taking the prefix array and pushing the
 					small then large item. During this step, I also prune by checking that
@@ -181,10 +181,12 @@
 				<img src="./graph.png" />
 				<p>
 					This graph shows that AprioriHybrid scales better than Apriori, and
-					multithreaded AprioriHybrid version is some multiple times faster than AprioriHybrid.
-					This factor is less than 8 due to the time spent on the main thread
-					instead of multiple threads. I found five frequent itemsets of length
-					10 at a minimum support count of 0.05%. They are:
+					multithreaded AprioriHybrid version is some multiple times faster than
+					AprioriHybrid. This factor is less than 8 due to the time spent on the
+					main thread instead of multiple threads. The multithreaded version is
+					slower at smaller scales due to how I combine the counts in the main
+					thread. I found five frequent itemsets of length 10 at a minimum
+					support count of 0.05%. They are:
 				</p>
 				<ul>
 					<li>126 158 193 214 332 561 682 833 843 998</li>
@@ -200,14 +202,14 @@
 					My AprioriHybrid implementation scales better than my Apriori
 					implementation as shown in the results section. This is due to not
 					having to count each combination in the transaction for AprioriTID,
-					which grows combinatorically large. The multithreaded version suffers from
-					having to combine the counts of candidate item sets and needing a main
-					thread to do that. This means that the main thread takes up almost
-					half the computing time, which would not be solved by adding more
-					threads. My implementation also requires a parameter to define when it
-					should switch to using AprioriTID. This means the user would have to
-					determine the best pass to switch to get the most performance. A
-					potential fix is to use heuristics to determine when to switch.
+					which grows combinatorically large. The multithreaded version suffers
+					from having to combine the counts of candidate item sets and needing a
+					main thread to do that. This means that the main thread takes up
+					almost half the computing time, which would not be solved by adding
+					more threads. My implementation also requires a parameter to define
+					when it should switch to using AprioriTID. This means the user would
+					have to determine the best pass to switch to get the most performance.
+					A potential fix is to use heuristics to determine when to switch.
 					Following that idea, I could use heuristics to figure out which
 					transactions could switch to TID and which transactions should stay to
 					using Apriori.
@@ -229,6 +231,16 @@
 					the counting of every candidate item set causes Apriori-like
 					algorithms to be slow on low passes like 3 and 4. My implementation
 					spends half the time doing pass 3 for a support count of 0.05%.
+				</p>
+				<p>
+					One future plan is to parallelize this algorithm, so that it could
+					work with multiple processors. This allows it to run on bigger
+					machines that could run the algorithm much faster than with one
+					processor. One part of the algorithm I would need to change is the
+					work the main processor does. Another plan could be to use a prefix
+					tree, or trie, to do the counting instead of a hash tree. "A fast
+					APRIORI implementation" by Ferenc Bodon shows how that would be
+					implemented.
 				</p>
 			</section>
 			<section id="src">
@@ -274,10 +286,9 @@
 					</ul>
 				</section>
 				<p>
-					I wrote a lot of source code for this project without using any
-					libraries except for the standard library (I do not want to write
-					allocators etc.). This is all implemented in the Rust language. The
-					GitHub repository is
+					I wrote a lot of source code for this project using only the standard
+					library and a command line parsing library for the commands. This is
+					all implemented in the Rust language. The GitHub repository is
 					<a href="https://github.com/Striker2783/data_mining/tree/presentation"
 						>https://github.com/Striker2783/data_mining/tree/presentation</a
 					>.
@@ -1499,8 +1510,8 @@ impl CDProcessHybrid {
 	</body>
 	<style>
 		p {
-            font-size: 20px;
-            text-indent: 2em;
+			font-size: 20px;
+			text-indent: 2em;
 		}
 		h1 {
 			font-size: 2em;
