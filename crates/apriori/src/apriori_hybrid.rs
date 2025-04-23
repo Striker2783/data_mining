@@ -62,11 +62,13 @@ pub enum TransactionType {
 }
 pub struct TransactionHybrid {
     curr: TransactionType,
+    prev: usize,
 }
 impl TransactionHybrid {
     pub fn new(curr: Vec<usize>) -> Self {
         Self {
             curr: TransactionType::Array(curr),
+            prev: 0,
         }
     }
 
@@ -74,8 +76,10 @@ impl TransactionHybrid {
         match &mut self.curr {
             TransactionType::Array(items) => {
                 let s = TransactionID::from_transaction(&items, i, counter);
-                if s.ids().len() < 10000 {
+                if s.ids().len() < self.prev {
                     self.curr = TransactionType::TID(s)
+                } else {
+                    self.prev = s.ids().len();
                 }
             }
             TransactionType::TID(transaction_id) => {
