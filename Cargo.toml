@@ -5,12 +5,13 @@ edition = "2024"
 
 [dependencies]
 apriori = { path = "./crates/apriori/" }
-clap = { version = "4.5.29", features = ["derive"] }
+clap = { version = "4.5.37", features = ["derive"] }
 count_distribution = { path = "./crates/count_distribution/" }
 datasets = { path = "./crates/datasets/" }
+fp_growth = { path = "./crates/fp_growth"}
 
 [workspace]
-members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets"]
+members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/fp_growth"]
 
 [profile.profiling]
 inherits="release"

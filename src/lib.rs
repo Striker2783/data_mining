@@ -4,6 +4,7 @@ mod apriori_tid;
 mod apriori_trie;
 mod count_distribution;
 mod count_distribution_hybrid;
+pub mod fp_growth;
 
 use std::error::Error;
 
@@ -14,6 +15,7 @@ use apriori_trie::AprioriTrieArgs;
 use clap::Subcommand;
 use count_distribution::CountDistributionArgs;
 use count_distribution_hybrid::CountDistributionHybridArgs;
+use fp_growth::FPGrowthArgs;
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -23,6 +25,7 @@ pub enum Commands {
     CountDistribution(CountDistributionArgs),
     AprioriTrie(AprioriTrieArgs),
     CountDistributionHybrid(CountDistributionHybridArgs),
+    FPGrowth(FPGrowthArgs),
 }
 impl Commands {
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
@@ -37,6 +40,7 @@ impl Commands {
             Commands::CountDistributionHybrid(count_distribution_hybrid_args) => {
                 count_distribution_hybrid_args.run()?
             }
+            Commands::FPGrowth(fpgrowth_args) => fpgrowth_args.run()?,
         };
         Ok(())
     }
