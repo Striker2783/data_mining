@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 datasets = {path = "../datasets"}
+[dev-dependencies]
+tester = { path = "../tester" }

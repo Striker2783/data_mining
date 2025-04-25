@@ -57,6 +57,7 @@ name = "apriori"
 version = "0.1.0"
 dependencies = [
  "datasets",
+ "tester",
 ]
 
 [[package]]
@@ -111,6 +112,7 @@ version = "0.1.0"
 dependencies = [
  "apriori",
  "datasets",
+ "tester",
 ]
 
 [[package]]
@@ -133,6 +135,7 @@ name = "fp_growth"
 version = "0.1.0"
 dependencies = [
  "datasets",
+ "tester",
 ]
 
 [[package]]
@@ -186,6 +189,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tester"
+version = "0.1.0"
+dependencies = [
+ "datasets",
 ]
 
 [[package]]

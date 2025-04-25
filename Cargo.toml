@@ -11,7 +11,7 @@ datasets = { path = "./crates/datasets/" }
 fp_growth = { path = "./crates/fp_growth"}
 
 [workspace]
-members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/fp_growth"]
+members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/fp_growth", "crates/tester"]
 
 [profile.profiling]
 inherits="release"

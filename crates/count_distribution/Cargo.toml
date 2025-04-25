@@ -7,3 +7,5 @@ description = "A crate that contains the implementation of Parallelized version 
 [dependencies]
 datasets = { path = "../datasets/"}
 apriori = { path = "../apriori/"}
+[dev-dependencies]
+tester = { path = "../tester" }
