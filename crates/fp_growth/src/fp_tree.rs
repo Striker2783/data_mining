@@ -22,6 +22,22 @@ impl FPTree {
             sup,
         }
     }
+    /// Gets the count of the set.
+    /// 0 for no set found in the tree.
+    pub fn get(&self, set: &[usize]) -> u64 {
+        let mut node = Some(self.root.clone());
+        let mut i = 0;
+        while let Some(curr_node) = node {
+            let curr_node_b = curr_node.borrow();
+            if i == set.len() {
+                return curr_node_b.count;
+            } else {
+                node = curr_node_b.children.get(&set[i]).cloned();
+                i += 1;
+            }
+        }
+        0
+    }
     pub fn mine(&mut self) -> Vec<Vec<usize>> {
         let mut v = Vec::new();
         let mut v2 = Vec::new();
@@ -51,7 +67,7 @@ impl FPTree {
                 let mut prefix = FPNode::get_prefix(curr_node.clone());
                 let curr_node_b = curr_node.borrow();
                 current_node = curr_node_b.link.clone();
-                prefix.retain(|n| map.get(n).unwrap_or(&0).clone() >= self.sup + 1);
+                prefix.retain(|n| map.get(n).unwrap_or(&0).clone() >= self.sup);
                 conditional_tree.insert_conditional(&prefix, curr_node_b.count);
             }
             conditional_tree.mine_helper(sets, v);
@@ -68,13 +84,7 @@ impl FPTree {
         );
     }
     pub fn insert_transaction(&mut self, items: &[usize]) {
-        FPNode::insert_transaction(
-            self.root.clone(),
-            items,
-            &mut self.header,
-            &mut self.tails,
-            1,
-        );
+        self.insert_conditional(items, 1);
     }
 }
 #[derive(Clone, Debug)]
@@ -90,7 +100,7 @@ impl FPNode {
     fn new(item: usize, parent: Option<Weak<RefCell<FPNode>>>) -> Self {
         Self {
             item,
-            count: 1,
+            count: 0,
             link: None,
             parent,
             children: HashMap::new(),
@@ -104,8 +114,8 @@ impl FPNode {
         n: u64,
     ) {
         let mut bor_a = a.borrow_mut();
+        bor_a.count += n;
         if items.is_empty() {
-            bor_a.count += n;
             return;
         }
         let item = items[0];
@@ -115,7 +125,6 @@ impl FPNode {
             }
             None => {
                 let child = Rc::new(RefCell::new(FPNode::new(item, Some(Rc::downgrade(&a)))));
-                child.borrow_mut().set_count(n);
                 bor_a.children.insert(item, child.clone());
                 match tails.get_mut(&item) {
                     Some(tail) => {
@@ -154,5 +163,23 @@ impl FPNode {
 
     fn set_count(&mut self, count: u64) {
         self.count = count;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_insert_transaction() {
+        let mut fp_tree = FPTree::new(2);
+        fp_tree.insert_transaction(&[1, 2, 3]);
+        assert_eq!(fp_tree.get(&[1]), 1);
+        assert_eq!(fp_tree.get(&[1, 2]), 1);
+        assert_eq!(fp_tree.get(&[1, 2, 3]), 1);
+        fp_tree.insert_transaction(&[1, 2, 4]);
+        assert_eq!(fp_tree.get(&[1]), 2);
+        assert_eq!(fp_tree.get(&[1, 2]), 2);
+        assert_eq!(fp_tree.get(&[1, 2, 3]), 1);
+        assert_eq!(fp_tree.get(&[1, 2, 4]), 1);
     }
 }
