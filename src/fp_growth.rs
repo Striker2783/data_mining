@@ -4,6 +4,8 @@ use clap::Args;
 use datasets::transaction_set::TransactionSet;
 use fp_growth::fp_growth::FPGrowth;
 
+use crate::print_candidate;
+
 #[derive(Args)]
 pub struct FPGrowthArgs {
     path: PathBuf,
@@ -14,7 +16,14 @@ impl FPGrowthArgs {
         let f = File::open(&self.path)?;
         let data = TransactionSet::from_dat(f);
         let fp_growth = FPGrowth::new(self.support_count, data);
-        fp_growth.run();
+        let sets=  fp_growth.run();
+        for mut v in sets {
+            v.sort();
+            for e in v {
+                print!("{e} ");
+            }
+            println!()
+        }
         Ok(())
     }
 }
