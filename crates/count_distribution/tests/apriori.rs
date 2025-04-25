@@ -1,8 +1,6 @@
-mod common;
-
 use std::{collections::HashSet, sync::Arc};
 
-use common::{Solved, test_generic};
+use tester::test_utils::{Solved, test_generic};
 use count_distribution::{count_distribution::CountDistribution, count_distribution_hybrid::CountDistributionHybrid};
 
 #[test]

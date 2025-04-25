@@ -1,12 +1,10 @@
-mod common;
-
 use std::collections::HashSet;
 
 use apriori::{
     apriori::Apriori, apriori_hybrid::AprioriHybrid, apriori_tid::AprioriTID,
     apriori_trie::AprioriT,
 };
-use common::{Solved, test_generic};
+use tester::test_utils::{Solved, test_generic};
 
 #[test]
 fn test_apriori() {
