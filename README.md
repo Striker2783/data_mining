@@ -72,3 +72,10 @@ This algorithm uses a Hash Trie to count candidate itemsets. The rationale behin
 ```
 cargo run --release -- apriori-trie [File] [Support Count]
 ```
+### FP Growth
+
+This algorithm uses an FP Tree to find frequent itemsets. The rationale behind this is that FP Trees are more memory-efficient and can find patterns instead of counting.
+
+```
+cargo run --release -- fp-growth [File] [Support Count]
+```
