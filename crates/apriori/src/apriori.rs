@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::{io, ops::{Deref, DerefMut}};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
@@ -9,16 +9,22 @@ use crate::{
     hash_tree::AprioriHashTree,
 };
 /// Runs the Apriori Algorithm
-#[derive(Debug)]
 pub struct Apriori {
     /// Minimum support count
     min_support: u64,
+    out: Box<dyn io::Write>
+}
+
+impl std::fmt::Debug for Apriori {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Apriori").field("min_support", &self.min_support).finish()
+    }
 }
 
 impl Apriori {
     /// Constructor
-    pub fn new(min_support: u64) -> Self {
-        Self { min_support }
+    pub fn new(min_support: u64, out: Box<dyn io::Write>) -> Self {
+        Apriori { min_support, out }
     }
     /// Runs the algorithm
     pub fn run(self, data: &TransactionSet) -> Vec<Candidates> {
