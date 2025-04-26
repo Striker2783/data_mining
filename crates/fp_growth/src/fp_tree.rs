@@ -75,13 +75,38 @@ impl FPTree {
         }
     }
     fn insert_conditional(&mut self, items: &[usize], n: u64) {
-        FPNode::insert_transaction(
-            self.root.clone(),
-            items,
-            &mut self.header,
-            &mut self.tails,
-            n,
-        );
+        let mut i = 0;
+        let mut curr_node = Some(self.root.clone());
+        while let Some(node) = curr_node {
+            let mut node_b = node.borrow_mut();
+            node_b.count += n;
+            if i >= items.len() {
+                break;
+            }
+            let item = items[i];
+            match node_b.children.get_mut(&item) {
+                Some(n) => {
+                    curr_node = Some(n.clone());
+                },
+                None => {
+                    let child =
+                        Rc::new(RefCell::new(FPNode::new(item, Some(Rc::downgrade(&node)))));
+                    node_b.children.insert(item.clone(), child.clone());
+                    match self.tails.get_mut(&item) {
+                        Some(tail) => {
+                            tail.borrow_mut().link = Some(child.clone());
+                            *tail = child.clone();
+                        }
+                        None => {
+                            self.tails.insert(item, child.clone());
+                            self.header.insert(item, child.clone());
+                        }
+                    }
+                    curr_node = Some(child);
+                }
+            }
+            i += 1;
+        }
     }
     pub fn insert_transaction(&mut self, items: &[usize]) {
         self.insert_conditional(items, 1);
@@ -106,40 +131,6 @@ impl FPNode {
             children: HashMap::new(),
         }
     }
-    pub fn insert_transaction(
-        a: MRc<FPNode>,
-        items: &[usize],
-        header: &mut Map,
-        tails: &mut Map,
-        n: u64,
-    ) {
-        let mut bor_a = a.borrow_mut();
-        bor_a.count += n;
-        if items.is_empty() {
-            return;
-        }
-        let item = items[0];
-        match bor_a.children.get_mut(&item) {
-            Some(child) => {
-                Self::insert_transaction(child.clone(), &items[1..], header, tails, n);
-            }
-            None => {
-                let child = Rc::new(RefCell::new(FPNode::new(item, Some(Rc::downgrade(&a)))));
-                bor_a.children.insert(item, child.clone());
-                match tails.get_mut(&item) {
-                    Some(tail) => {
-                        tail.borrow_mut().link = Some(child.clone());
-                        *tail = child.clone();
-                    }
-                    None => {
-                        tails.insert(item, child.clone());
-                        header.insert(item, child.clone());
-                    }
-                }
-                Self::insert_transaction(child.clone(), &items[1..], header, tails, n);
-            }
-        }
-    }
     pub fn get_prefix(s: MRc<FPNode>) -> Vec<usize> {
         let mut prefix = Vec::new();
         let mut s = s.borrow_mut();
@@ -159,10 +150,6 @@ impl FPNode {
         }
         prefix.reverse();
         prefix
-    }
-
-    fn set_count(&mut self, count: u64) {
-        self.count = count;
     }
 }
 
