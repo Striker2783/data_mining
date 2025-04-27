@@ -28,7 +28,13 @@ impl FPGrowth {
     }
     pub fn run(mut self) -> Vec<Vec<usize>> {
         let mut tree = self.create_fp_tree();
-        tree.mine()
+        let mut v = Vec::new();
+        tree.mine(|vec| v.push(vec.to_vec()));
+        v
+    }
+    pub fn run_fn(mut self, f: impl FnMut(&[usize])) {
+        let mut tree = self.create_fp_tree();
+        tree.mine(f)
     }
 }
 

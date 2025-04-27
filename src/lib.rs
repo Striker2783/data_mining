@@ -53,11 +53,11 @@ impl Commands {
             Commands::CountDistribution(count_distribution_args) => {
                 count_distribution_args.run(a)?
             }
-            Commands::AprioriTrie(apriori_trie_args) => apriori_trie_args.run()?,
+            Commands::AprioriTrie(apriori_trie_args) => apriori_trie_args.run(a)?,
             Commands::CountDistributionHybrid(count_distribution_hybrid_args) => {
-                count_distribution_hybrid_args.run()?
+                count_distribution_hybrid_args.run(a)?
             }
-            Commands::FPGrowth(fpgrowth_args) => fpgrowth_args.run()?,
+            Commands::FPGrowth(fpgrowth_args) => fpgrowth_args.run(a)?,
         };
         Ok(())
     }
