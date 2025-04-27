@@ -4,7 +4,7 @@ use apriori::apriori::Apriori;
 use clap::Args;
 use datasets::transaction_set::TransactionSet;
 
-use crate::{Arguments, get_writer};
+use crate::{get_writer, out_writer, Arguments};
 
 #[derive(Args)]
 pub struct AprioriArgs {
@@ -17,15 +17,7 @@ impl AprioriArgs {
 
         let f = File::open(&self.path)?;
         let data = TransactionSet::from_dat(f);
-        let closure = |v: &[usize]| {
-            let mut string = String::new();
-            for &e in v {
-                string += format!("{e} ").as_str();
-            }
-            string += "\n";
-            let _ = out.write(string.as_bytes());
-        };
-        Apriori::new(self.support_count).run_fn(&data, closure);
+        Apriori::new(self.support_count).run_fn(&data, |v| out_writer(v, &mut out));
         let _ = out.flush();
         Ok(())
     }

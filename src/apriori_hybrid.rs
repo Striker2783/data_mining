@@ -4,7 +4,7 @@ use apriori::apriori_hybrid::AprioriHybrid;
 use clap::Args;
 use datasets::transaction_set::TransactionSet;
 
-use crate::print_candidate;
+use crate::{get_writer, out_writer, Arguments};
 
 #[derive(Args)]
 pub struct AprioriHybridArgs {
@@ -15,12 +15,11 @@ pub struct AprioriHybridArgs {
 }
 
 impl AprioriHybridArgs {
-    pub fn run(&self) -> Result<(), Box<dyn Error>> {
+    pub fn run(&self, a: &Arguments) -> Result<(), Box<dyn Error>> {
         let t = TransactionSet::from_dat(File::open(&self.path)?);
-        let c = AprioriHybrid::new(self.support_count, self.switch).run(&t);
-        for c in c {
-            print_candidate(c.iter());
-        }
+        let mut out = get_writer(&a.output_file);
+        AprioriHybrid::new(self.support_count, self.switch)
+            .run_fn(&t, |v| out_writer(v, &mut out));
         Ok(())
     }
 }

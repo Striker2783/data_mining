@@ -49,7 +49,7 @@ impl Commands {
         match self {
             Commands::Apriori(apriori_args) => apriori_args.run(a)?,
             Commands::AprioriTID(apriori_args) => apriori_args.run(a)?,
-            Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run()?,
+            Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run(a)?,
             Commands::CountDistribution(count_distribution_args) => {
                 count_distribution_args.run()?
             }
@@ -79,4 +79,13 @@ pub fn get_writer(path: &Option<PathBuf>) -> Box<dyn io::Write> {
     } else {
         return Box::new(io::stdout().lock());
     }
+}
+
+pub fn out_writer(v: &[usize], out: &mut impl std::io::Write) {
+    let mut string = String::new();
+    for &e in v {
+        string += format!("{e} ").as_str();
+    }
+    string += "\n";
+    let _ = out.write(string.as_bytes());
 }
