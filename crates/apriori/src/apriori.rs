@@ -38,9 +38,7 @@ impl Apriori {
     /// Runs the algorithm
     pub fn run_fn(self, data: &TransactionSet, mut f: impl FnMut(&[usize])) {
         let mut prev = apriori_run_one(data, self.min_support);
-        for item in prev.iter() {
-            f(item);
-        }
+        prev.iter().for_each(|v| f(v));
         for i in 2.. {
             // Creates the next frequent itemsets based on the previous frequent itemsets.
             let next = AprioriCandidates::new(prev.deref()).run(data, i, self.min_support);
@@ -48,9 +46,7 @@ impl Apriori {
                 break;
             }
             prev = next;
-            for item in prev.iter() {
-                f(item);
-            }
+            prev.iter().for_each(|v| f(v));
         }
     }
 }

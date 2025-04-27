@@ -7,7 +7,10 @@ mod count_distribution_hybrid;
 pub mod fp_growth;
 
 use std::{
-    error::Error, fs::{self, File}, io::{self, BufWriter}, path::PathBuf
+    error::Error,
+    fs::{self, File},
+    io::{self, BufWriter},
+    path::PathBuf,
 };
 
 use apriori::AprioriArgs;
@@ -18,7 +21,6 @@ use clap::{Parser, Subcommand};
 use count_distribution::CountDistributionArgs;
 use count_distribution_hybrid::CountDistributionHybridArgs;
 use fp_growth::FPGrowthArgs;
-
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -46,7 +48,7 @@ impl Commands {
     pub fn run(&self, a: &Arguments) -> Result<(), Box<dyn Error>> {
         match self {
             Commands::Apriori(apriori_args) => apriori_args.run(a)?,
-            Commands::AprioriTID(apriori_args) => apriori_args.run()?,
+            Commands::AprioriTID(apriori_args) => apriori_args.run(a)?,
             Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run()?,
             Commands::CountDistribution(count_distribution_args) => {
                 count_distribution_args.run()?
