@@ -14,11 +14,10 @@ pub struct Apriori {
     /// Minimum support count
     min_support: u64,
 }
-
 impl Apriori {
     /// Constructor
     pub fn new(min_support: u64) -> Self {
-        Self { min_support }
+        Apriori { min_support }
     }
     /// Runs the algorithm
     pub fn run(self, data: &TransactionSet) -> Vec<Candidates> {
@@ -35,6 +34,20 @@ impl Apriori {
             v.push(next);
         }
         v
+    }
+    /// Runs the algorithm
+    pub fn run_fn(self, data: &TransactionSet, mut f: impl FnMut(&[usize])) {
+        let mut prev = apriori_run_one(data, self.min_support);
+        prev.iter().for_each(|v| f(v));
+        for i in 2.. {
+            // Creates the next frequent itemsets based on the previous frequent itemsets.
+            let next = AprioriCandidates::new(prev.deref()).run(data, i, self.min_support);
+            if next.is_empty() {
+                break;
+            }
+            prev = next;
+            prev.iter().for_each(|v| f(v));
+        }
     }
 }
 /// The wrapper for AprioriCandidates

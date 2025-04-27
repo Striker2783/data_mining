@@ -27,8 +27,8 @@ impl AprioriTID {
         loop {
             let prev = v.last().unwrap();
             // Finds the frequent itemsets and next TIDs
-            let (next, next_t) = AprioriTiDCandidates::new(prev.deref())
-                .next(&prev_transactions, self.min_support);
+            let (next, next_t) =
+                AprioriTiDCandidates::new(prev.deref()).next(&prev_transactions, self.min_support);
             if next.is_empty() {
                 break;
             }
@@ -36,6 +36,25 @@ impl AprioriTID {
             v.push(next);
         }
         v
+    }
+    /// Runs the algorithm a different (but proper) way, but slower
+    pub fn run_fn(&self, data: &TransactionSet, mut f: impl FnMut(&[usize])) {
+        // Gets all the frequent items
+        let mut prev = apriori_run_one(data, self.min_support);
+        prev.iter().for_each(|v| f(v));
+        // Generates the TIDs
+        let mut prev_transactions = TransactionIDs::from(data);
+        loop {
+            // Finds the frequent itemsets and next TIDs
+            let (next, next_t) =
+                AprioriTiDCandidates::new(prev.deref()).next(&prev_transactions, self.min_support);
+            if next.is_empty() {
+                break;
+            }
+            prev_transactions = next_t;
+            prev = next;
+            prev.iter().for_each(|v| f(v));
+        }
     }
 }
 /// Contains the algorithm for AprioriTID
@@ -46,11 +65,7 @@ impl<'a> AprioriTiDCandidates<'a> {
         Self(v)
     }
     /// Generates the frequent itemsets and next TIDs
-    pub fn next(
-        &self,
-        data: &TransactionIDs,
-        min_sup: u64,
-    ) -> (Candidates, TransactionIDs) {
+    pub fn next(&self, data: &TransactionIDs, min_sup: u64) -> (Candidates, TransactionIDs) {
         let (tree, next) = self.count(data);
         // Returns the new frequent itemsets
         let mut new_candidates = Candidates::default();

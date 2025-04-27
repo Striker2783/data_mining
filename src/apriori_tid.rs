@@ -4,7 +4,7 @@ use apriori::apriori_tid::AprioriTID;
 use clap::Args;
 use datasets::transaction_set::TransactionSet;
 
-use crate::print_candidate;
+use crate::{get_writer, out_writer, Arguments};
 
 #[derive(Args)]
 pub struct AprioriTIDArgs {
@@ -13,12 +13,10 @@ pub struct AprioriTIDArgs {
 }
 
 impl AprioriTIDArgs {
-    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(&self, a: &Arguments) -> Result<(), Box<dyn std::error::Error>> {
         let t = TransactionSet::from_dat(File::open(&self.path)?);
-        let candidates = AprioriTID::new(self.support_count).run(&t);
-        for c in candidates {
-            print_candidate(c.iter());
-        }
+        let mut out = get_writer(&a.output_file);
+        AprioriTID::new(self.support_count).run_fn(&t, |v| out_writer(v, &mut out));
         Ok(())
     }
 }

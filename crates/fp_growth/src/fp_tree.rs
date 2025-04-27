@@ -38,17 +38,15 @@ impl FPTree {
         }
         0
     }
-    pub fn mine(&mut self) -> Vec<Vec<usize>> {
-        let mut v = Vec::new();
+    pub fn mine(&mut self, mut f: impl FnMut(&[usize])) {
         let mut v2 = Vec::new();
-        self.mine_helper(&mut v, &mut v2);
-        v
+        self.mine_helper(&mut f, &mut v2);
     }
-    fn mine_helper(&mut self, sets: &mut Vec<Vec<usize>>, v: &mut Vec<usize>) {
+    fn mine_helper(&mut self, f: &mut impl FnMut(&[usize]), v: &mut Vec<usize>) {
         for (&k, node) in self.header.iter() {
             let node = node.clone();
             v.push(k);
-            sets.push(v.clone());
+            f(v);
             let mut conditional_tree = FPTree::new(self.sup);
             let mut current_node = Some(node.clone());
             let mut map = HashMap::new();
@@ -70,7 +68,7 @@ impl FPTree {
                 prefix.retain(|n| map.get(n).unwrap_or(&0).clone() >= self.sup);
                 conditional_tree.insert_conditional(&prefix, curr_node_b.count);
             }
-            conditional_tree.mine_helper(sets, v);
+            conditional_tree.mine_helper(f, v);
             v.pop();
         }
     }
