@@ -4,7 +4,7 @@ use clap::Args;
 use count_distribution::count_distribution::CountDistribution;
 use datasets::transaction_set::TransactionSet;
 
-use crate::print_candidate;
+use crate::{get_writer, out_writer, Arguments};
 
 #[derive(Args)]
 pub struct CountDistributionArgs {
@@ -15,12 +15,15 @@ pub struct CountDistributionArgs {
 }
 
 impl CountDistributionArgs {
-    pub fn run(&self) -> Result<(), Box<dyn Error>> {
+    pub fn run(&self, a: &Arguments) -> Result<(), Box<dyn Error>> {
         let t = TransactionSet::from_dat(File::open(&self.path)?);
         let candidates = CountDistribution::new(Arc::new(t), self.threads, self.support_count);
         let c = candidates.run();
+        let mut out = get_writer(&a.output_file);
         for c in c {
-            print_candidate(c.iter());
+            for c in c.iter() {
+                out_writer(c, &mut out);
+            }
         }
         Ok(())
     }

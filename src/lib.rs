@@ -51,7 +51,7 @@ impl Commands {
             Commands::AprioriTID(apriori_args) => apriori_args.run(a)?,
             Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run(a)?,
             Commands::CountDistribution(count_distribution_args) => {
-                count_distribution_args.run()?
+                count_distribution_args.run(a)?
             }
             Commands::AprioriTrie(apriori_trie_args) => apriori_trie_args.run()?,
             Commands::CountDistributionHybrid(count_distribution_hybrid_args) => {
