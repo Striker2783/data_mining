@@ -46,16 +46,16 @@ impl Commands {
     pub fn run(&self, a: &Arguments) -> Result<(), Box<dyn Error>> {
         match self {
             Commands::Apriori(apriori_args) => apriori_args.run(a)?,
-            Commands::AprioriTID(apriori_args) => apriori_args.run(a)?,
-            Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run(a)?,
+            Commands::AprioriTID(apriori_args) => apriori_args.run()?,
+            Commands::AprioriHybrid(apriori_hybrid_args) => apriori_hybrid_args.run()?,
             Commands::CountDistribution(count_distribution_args) => {
-                count_distribution_args.run(a)?
+                count_distribution_args.run()?
             }
-            Commands::AprioriTrie(apriori_trie_args) => apriori_trie_args.run(a)?,
+            Commands::AprioriTrie(apriori_trie_args) => apriori_trie_args.run()?,
             Commands::CountDistributionHybrid(count_distribution_hybrid_args) => {
-                count_distribution_hybrid_args.run(a)?
+                count_distribution_hybrid_args.run()?
             }
-            Commands::FPGrowth(fpgrowth_args) => fpgrowth_args.run(a)?,
+            Commands::FPGrowth(fpgrowth_args) => fpgrowth_args.run()?,
         };
         Ok(())
     }

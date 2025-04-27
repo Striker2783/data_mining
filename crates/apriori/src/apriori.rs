@@ -1,4 +1,4 @@
-use std::{io, ops::{Deref, DerefMut}};
+use std::ops::{Deref, DerefMut};
 
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
@@ -9,22 +9,15 @@ use crate::{
     hash_tree::AprioriHashTree,
 };
 /// Runs the Apriori Algorithm
+#[derive(Debug)]
 pub struct Apriori {
     /// Minimum support count
     min_support: u64,
-    out: Box<dyn io::Write>
 }
-
-impl std::fmt::Debug for Apriori {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Apriori").field("min_support", &self.min_support).finish()
-    }
-}
-
 impl Apriori {
     /// Constructor
-    pub fn new(min_support: u64, out: Box<dyn io::Write>) -> Self {
-        Apriori { min_support, out }
+    pub fn new(min_support: u64) -> Self {
+        Apriori { min_support }
     }
     /// Runs the algorithm
     pub fn run(self, data: &TransactionSet) -> Vec<Candidates> {
@@ -41,6 +34,24 @@ impl Apriori {
             v.push(next);
         }
         v
+    }
+    /// Runs the algorithm
+    pub fn run_fn(self, data: &TransactionSet, mut f: impl FnMut(&[usize])) {
+        let mut prev = apriori_run_one(data, self.min_support);
+        for item in prev.iter() {
+            f(item);
+        }
+        for i in 2.. {
+            // Creates the next frequent itemsets based on the previous frequent itemsets.
+            let next = AprioriCandidates::new(prev.deref()).run(data, i, self.min_support);
+            if next.is_empty() {
+                break;
+            }
+            prev = next;
+            for item in prev.iter() {
+                f(item);
+            }
+        }
     }
 }
 /// The wrapper for AprioriCandidates
