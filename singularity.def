@@ -1,0 +1,20 @@
+Bootstrap: docker
+From: rust
+Stage: build
+
+%post
+    rustup update
+    cd /project
+    cargo build --release
+%files
+    . /project
+
+Bootstrap: docker
+From: ubuntu:24.04
+Stage: final
+
+%files from build
+    /project/target/release/data_mining /p
+
+%runscript
+    exec /p "$@"
