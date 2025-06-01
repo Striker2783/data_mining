@@ -4,7 +4,8 @@ mod apriori_tid;
 mod apriori_trie;
 mod count_distribution;
 mod count_distribution_hybrid;
-pub mod fp_growth;
+mod fp_growth;
+mod maxminer;
 
 use std::{
     error::Error,
@@ -21,6 +22,8 @@ use clap::{Parser, Subcommand};
 use count_distribution::CountDistributionArgs;
 use count_distribution_hybrid::CountDistributionHybridArgs;
 use fp_growth::FPGrowthArgs;
+
+use crate::maxminer::MaxMinerArgs;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -43,6 +46,7 @@ pub enum Commands {
     AprioriTrie(AprioriTrieArgs),
     CountDistributionHybrid(CountDistributionHybridArgs),
     FPGrowth(FPGrowthArgs),
+    MaxMiner(MaxMinerArgs),
 }
 impl Commands {
     pub fn run(&self, a: &Arguments) -> Result<(), Box<dyn Error>> {
@@ -58,6 +62,7 @@ impl Commands {
                 count_distribution_hybrid_args.run(a)?
             }
             Commands::FPGrowth(fpgrowth_args) => fpgrowth_args.run(a)?,
+            Commands::MaxMiner(max_miner_args) => max_miner_args.run(a)?,
         };
         Ok(())
     }

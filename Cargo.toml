@@ -9,9 +9,10 @@ clap = { version = "4.5.37", features = ["derive"] }
 count_distribution = { path = "./crates/count_distribution/" }
 datasets = { path = "./crates/datasets/" }
 fp_growth = { path = "./crates/fp_growth"}
+maxminer = { path = "./crates/maxminer" }
 
 [workspace]
-members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/fp_growth", "crates/tester"]
+members = ["./crates/apriori/", "crates/count_distribution", "crates/datasets", "crates/fp_growth", "crates/maxminer", "crates/tester"]
 
 [profile.profiling]
 inherits="release"

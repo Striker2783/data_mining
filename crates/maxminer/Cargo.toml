@@ -1,0 +1,8 @@
+[package]
+name = "maxminer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+datasets = { path = "../datasets" }
+apriori = { path = "../apriori" }
