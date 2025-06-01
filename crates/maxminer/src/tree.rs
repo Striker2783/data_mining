@@ -196,24 +196,22 @@ impl Node {
     }
     fn count(&mut self, transaction: &[usize], i: usize) {
         if i == 0 {
-            let mut all = true;
-            for (k, n) in self.tails.iter_mut() {
-                if !transaction.contains(k) {
-                    all = false;
-                    continue;
+            let mut increments = 0;
+            for &n in transaction {
+                if let Some(n) = self.tails.get_mut(&n) {
+                    n.count += 1;
+                    increments += 1;
                 }
-                n.count += 1;
             }
-            if all {
+            if increments == self.tails.len() {
                 self.tail_count += 1;
             }
             return;
         }
-        for (k, n) in self.tails.iter_mut() {
-            if !transaction.contains(k) {
-                continue;
+        for (j, &n) in transaction.iter().enumerate() {
+            if let Some(node) = self.tails.get_mut(&n) {
+                node.count(&transaction[(j + 1)..], i - 1);
             }
-            n.count(transaction, i - 1);
         }
     }
 }
