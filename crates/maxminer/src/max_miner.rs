@@ -1,4 +1,7 @@
-use apriori::{apriori::apriori_run_one, trie::AprioriTrie};
+use apriori::{
+    apriori::{apriori_run_one, apriori_run_one_count},
+    trie::AprioriTrie,
+};
 use datasets::{transaction_set::TransactionSet, utils::nested_loops};
 
 use crate::{frequent::Frequent, tree::Trie};
@@ -13,13 +16,16 @@ impl MaxMiner {
         Self { min_sup, data }
     }
     pub fn run(self, mut f: impl FnMut(&[usize])) {
-        let c = apriori_run_one(&self.data, self.min_sup);
-        let mut v: Vec<_> = c.iter().map(|v| v[0]).collect();
-        v.sort_unstable();
+        let c = apriori_run_one_count(&self.data);
         let mut trie = Trie::new();
-        trie.initial_groups(&v);
+        trie.initial_groups(&c, self.min_sup);
         let mut frequent = Frequent::new();
-        frequent.add(&[*v.last().unwrap()]);
+        for i in (0..c.len()).rev() {
+            if c[i] >= self.min_sup {
+                frequent.add(&[i]);
+                break;
+            }
+        }
         for i in 1.. {
             for s in self.data.iter() {
                 trie.count(s, i);
@@ -45,9 +51,7 @@ impl MaxMiner {
                     );
                 }
             });
-            trie.tails_filter(|v| {
-                !to_remove.contains(v)
-            }, i + 1);
+            trie.tails_filter(|v| !to_remove.contains(v), i + 1);
             to_remove.for_each(|v| {
                 frequent.remove(v);
             });

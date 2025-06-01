@@ -7,10 +7,17 @@ impl Trie {
     pub fn new() -> Self {
         Self { root: Node::new(0) }
     }
-    pub fn initial_groups(&mut self, v: &[usize]) {
+    pub fn initial_groups(&mut self, v: &[u64], sup: u64) {
         for i in 0..v.len() {
+            if v[i] < sup {
+                continue;
+            }
+            self.root.insert(&[i], v[i]);
             for j in (i + 1)..v.len() {
-                self.root.insert(&[v[i], v[j]]);
+                if v[j] < sup {
+                    continue;
+                }
+                self.root.add(&[i, j]);
             }
         }
     }
@@ -39,8 +46,12 @@ impl Trie {
         self.root.tails_filter(f, i)
     }
 
-    pub fn insert(&mut self, v: &[usize]) {
-        self.root.insert(v)
+    pub fn add(&mut self, v: &[usize]) {
+        self.root.add(v)
+    }
+
+    pub fn insert(&mut self, v: &[usize], n: u64) {
+        self.root.insert(v, n)
     }
 }
 
@@ -65,6 +76,17 @@ impl Node {
             tail_count: 0,
             tails: HashMap::new(),
         }
+    }
+    pub fn remove(&mut self, v: &[usize]) -> bool {
+        if v.is_empty() {
+            return true;
+        }
+        if let Some(n) = self.tails.get_mut(&v[0]) {
+            if n.remove(&v[1..]) {
+                self.tails.remove(&v[0]);
+            }
+        }
+        self.tails.is_empty()
     }
     pub fn tails_filter(&mut self, mut f: impl FnMut(&[usize]) -> bool, i: usize) {
         let mut v = Vec::new();
@@ -151,7 +173,23 @@ impl Node {
             }
             for (i, &i1) in next.iter().enumerate() {
                 for &j1 in next.iter().skip(i + 1) {
-                    self.insert(&[i1, j1]);
+                    self.add(&[i1, j1]);
+                }
+                let node = self.tails.get(&i1).unwrap();
+                if node.lower_bound(self) >= sup {
+                    for &j1 in next.iter().skip(i + 1) {
+                        self.remove(&[i1, j1]);
+                    }
+                    v.push(i1);
+                    for &j1 in next.iter().skip(i + 1) {
+                        v.push(j1);
+                    }
+                    f(v);
+                    for _ in (i + 1)..next.len() {
+                        v.pop();
+                    }
+                    v.pop();
+                    continue;
                 }
             }
             if next.is_empty() {
@@ -169,6 +207,13 @@ impl Node {
             v.pop();
         }
     }
+    fn lower_bound(&self, itemset: &Node) -> u64 {
+        let mut sum = 0;
+        for (_, n) in self.tails.iter() {
+            sum += itemset.count - itemset.tails.get(&n.head).unwrap().count;
+        }
+        self.count.saturating_sub(sum)
+    }
     fn get(&self, v: &[usize]) -> Option<&Self> {
         if v.is_empty() {
             return Some(self);
@@ -181,16 +226,20 @@ impl Node {
         }
         self.tails.get_mut(&v[0])?.get_mut(&v[1..])
     }
-    fn insert(&mut self, v: &[usize]) {
+    fn add(&mut self, v: &[usize]) {
+        self.insert(v, 0);
+    }
+    pub fn insert(&mut self, v: &[usize], n: u64) {
         if v.is_empty() {
+            self.count = n;
             return;
         }
         match self.tails.get_mut(&v[0]) {
-            Some(n) => n.insert(&v[1..]),
+            Some(n) => n.add(&v[1..]),
             None => {
-                let mut n = Self::new(v[0]);
-                n.insert(&v[1..]);
-                self.tails.insert(v[0], n);
+                let mut node = Self::new(v[0]);
+                node.insert(&v[1..], n);
+                self.tails.insert(v[0], node);
             }
         }
     }
@@ -222,9 +271,9 @@ mod tests {
 
     #[test]
     fn test_initial() {
-        let items = vec![0, 1, 3];
+        let items = vec![1, 1, 0, 1];
         let mut trie = Trie::new();
-        trie.initial_groups(&items);
+        trie.initial_groups(&items, 1);
         assert!(trie.contains(&[0, 1]));
         assert!(trie.contains(&[0, 3]));
         assert!(trie.contains(&[1, 3]));
@@ -236,10 +285,10 @@ mod tests {
     #[test]
     fn test_tails_filter() {
         let mut trie = Trie::new();
-        trie.insert(&[1, 2, 3, 5]);
-        trie.insert(&[1, 2, 3, 4]);
-        trie.insert(&[1, 2, 4, 5]);
-        trie.insert(&[1, 2, 4, 6]);
+        trie.add(&[1, 2, 3, 5]);
+        trie.add(&[1, 2, 3, 4]);
+        trie.add(&[1, 2, 4, 5]);
+        trie.add(&[1, 2, 4, 6]);
         trie.tails_filter(
             |v| {
                 if v == [1, 2, 4, 5, 6] {
