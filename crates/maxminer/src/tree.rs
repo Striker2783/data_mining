@@ -5,7 +5,7 @@ pub struct Trie {
 }
 impl Trie {
     pub fn new() -> Self {
-        Self { root: Node::new(0) }
+        Self { root: Node::new() }
     }
     pub fn initial_groups(&mut self, v: &[u64], sup: u64) {
         for i in 0..v.len() {
@@ -62,16 +62,14 @@ impl Default for Trie {
 }
 #[derive(Debug)]
 struct Node {
-    head: usize,
     count: u64,
     tail_count: u64,
     tails: HashMap<usize, Node>,
 }
 
 impl Node {
-    fn new(head: usize) -> Self {
+    fn new() -> Self {
         Self {
-            head,
             count: 0,
             tail_count: 0,
             tails: HashMap::new(),
@@ -201,16 +199,16 @@ impl Node {
             }
             return;
         }
-        for (_, n) in self.tails.iter_mut() {
-            v.push(n.head);
+        for (&k, n) in self.tails.iter_mut() {
+            v.push(k);
             n.count_frequent_helper(f, v, i - 1, sup);
             v.pop();
         }
     }
     fn lower_bound(&self, itemset: &Node) -> u64 {
         let mut sum = 0;
-        for (_, n) in self.tails.iter() {
-            sum += itemset.count - itemset.tails.get(&n.head).unwrap().count;
+        for (&k, _) in self.tails.iter() {
+            sum += itemset.count - itemset.tails.get(&k).unwrap().count;
         }
         self.count.saturating_sub(sum)
     }
@@ -237,7 +235,7 @@ impl Node {
         match self.tails.get_mut(&v[0]) {
             Some(n) => n.add(&v[1..]),
             None => {
-                let mut node = Self::new(v[0]);
+                let mut node = Self::new();
                 node.insert(&v[1..], n);
                 self.tails.insert(v[0], node);
             }
