@@ -41,15 +41,7 @@ impl MaxMiner {
             );
             let mut to_remove = Frequent::new();
             frequent.for_each(|v| {
-                for i in 1..v.len() {
-                    nested_loops(
-                        |v| {
-                            to_remove.add(v);
-                        },
-                        v,
-                        i,
-                    );
-                }
+                to_remove.add_proper_powerset(v);
             });
             trie.tails_filter(|v| !to_remove.contains(v), i + 1);
             to_remove.for_each(|v| {

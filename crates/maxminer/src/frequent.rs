@@ -24,6 +24,10 @@ impl Frequent {
     pub fn for_each(&self, f: impl FnMut(&[usize])) {
         self.root.for_each(f)
     }
+
+    pub fn add_proper_powerset(&mut self, v: &[usize]) {
+        self.root.add_proper_powerset(v, v.len())
+    }
 }
 
 impl Default for Frequent {
@@ -41,6 +45,27 @@ impl Node {
         Self {
             map: HashMap::new(),
             is_in: false,
+        }
+    }
+    pub fn add_proper_powerset(&mut self, v: &[usize], len: usize) {
+        if len == 0 {
+            return;
+        }
+        self.is_in = true;
+        if v.is_empty() {
+            return;
+        }
+        for (i, &n) in v.iter().enumerate() {
+            match self.map.get_mut(&n) {
+                Some(n) => {
+                    n.add_proper_powerset(&v[(i + 1)..], len - 1);
+                }
+                None => {
+                    let mut node = Node::new();
+                    node.add_proper_powerset(&v[(i + 1)..], len - 1);
+                    self.map.insert(n, node);
+                }
+            }
         }
     }
 
@@ -107,6 +132,8 @@ impl Default for Node {
 
 #[cfg(test)]
 mod tests {
+    use datasets::utils::nested_loops;
+
     use crate::frequent::Frequent;
 
     #[test]
@@ -126,5 +153,14 @@ mod tests {
         assert!(frequent.contains(&[0, 1, 3, 5]));
         frequent.remove(&[0]);
         assert!(frequent.contains(&[0, 1, 3, 5]));
+    }
+    #[test]
+    fn test_powerset() {
+        let mut frequent = Frequent::new();
+        frequent.add_proper_powerset(&[1, 2, 3, 4]);
+        assert!(frequent.contains(&[1]));
+        assert!(frequent.contains(&[1, 2]));
+        assert!(frequent.contains(&[1, 2, 3]));
+        assert!(!frequent.contains(&[1, 2, 3, 4]));
     }
 }
